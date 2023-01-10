@@ -1,5 +1,5 @@
 name: napari-metadata
-display_name: metadata
+display_name: Metadata
 contributions:
   commands:
     - id: napari-metadata.get_reader
@@ -13,7 +13,7 @@ contributions:
       title: Save image data with metadata
     - id: napari-metadata.make_sample_data
       python_name: napari_metadata._sample_data:make_sample_data
-      title: Load sample data from metadata
+      title: Load sample image with metadata
     - id: napari-metadata.make_qwidget
       python_name: napari_metadata._widget:ExampleQWidget
       title: Make example QWidget

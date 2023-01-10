@@ -7,19 +7,7 @@
 [![codecov](https://codecov.io/gh/andy-sweet/napari-metadata/branch/main/graph/badge.svg)](https://codecov.io/gh/andy-sweet/napari-metadata)
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-metadata)](https://napari-hub.org/plugins/napari-metadata)
 
-View and edit layer metadata
-
-----------------------------------
-
-This [napari] plugin was generated with [Cookiecutter] using [@napari]'s [cookiecutter-napari-plugin] template.
-
-<!--
-Don't miss the full getting started guide to set up your new package:
-https://github.com/napari/cookiecutter-napari-plugin#getting-started
-
-and review the napari docs for plugin developers:
-https://napari.org/stable/plugins/index.html
--->
+View and edit layer metadata.
 
 ## Installation
 
@@ -27,17 +15,14 @@ You can install `napari-metadata` via [pip]:
 
     pip install napari-metadata
 
-
-
 To install latest development version :
 
     pip install git+https://github.com/andy-sweet/napari-metadata.git
 
-
 ## Contributing
 
-Contributions are very welcome. Tests can be run with [tox], please ensure
-the coverage at least stays the same before you submit a pull request.
+Contributions are not yet welcome because this is still very much a work in progress.
+But that might change in the future!
 
 ## License
 
