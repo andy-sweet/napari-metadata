@@ -14,15 +14,9 @@ contributions:
     - id: napari-metadata.make_sample_data
       python_name: napari_metadata._sample_data:make_sample_data
       title: Load sample image with metadata
-    - id: napari-metadata.make_qwidget
-      python_name: napari_metadata._widget:ExampleQWidget
-      title: Make metadata QWidget
-    - id: napari-metadata.make_magic_widget
-      python_name: napari_metadata._widget:example_magic_widget
-      title: Make example magic widget
-    - id: napari-metadata.make_func_widget
-      python_name: napari_metadata._widget:example_function_widget
-      title: Make example function widget
+    - id: napari-metadata.make_metadata_qwidget
+      python_name: napari_metadata._widget:QMetadataWidget
+      title: Make metadata Qt widget
   readers:
     - command: napari-metadata.get_reader
       accepts_directories: false
@@ -39,10 +33,5 @@ contributions:
       display_name: metadata
       key: unique_id.1
   widgets:
-    - command: napari-metadata.make_qwidget
-      display_name: Example QWidget
-    - command: napari-metadata.make_magic_widget
-      display_name: Example Magic Widget
-    - command: napari-metadata.make_func_widget
-      autogenerate: true
-      display_name: Example Function Widget
+    - command: napari-metadata.make_metadata_qwidget
+      display_name: Layer metadata

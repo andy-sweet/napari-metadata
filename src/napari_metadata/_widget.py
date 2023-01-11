@@ -1,25 +1,16 @@
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from magicgui import magic_factory
-from qtpy.QtWidgets import (
-    QGridLayout,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from qtpy.QtWidgets import QGridLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
 
 if TYPE_CHECKING:
     import napari
 
 
-class ExampleQWidget(QWidget):
+class QMetadataWidget(QWidget):
     def __init__(self, viewer: "napari.viewer.Viewer"):
         super().__init__()
         self._value_edits = {}
-        self._restore_buttons = {}
         self.viewer = viewer
         self.viewer.layers.selection.events.changed.connect(
             self._on_selected_layers_changed
@@ -49,16 +40,13 @@ class ExampleQWidget(QWidget):
     def _add_attribute_widgets(
         self, name: str, *, editable: bool = False
     ) -> None:
-        restore_button = QPushButton("Restore")
         value_edit = QLineEdit("")
         value_edit.setEnabled(editable)
         layout = self._attribute_widget.layout()
         row = layout.rowCount()
         layout.addWidget(QLabel(name), row, 0)
         layout.addWidget(value_edit, row, 1)
-        layout.addWidget(restore_button, row, 2)
         self._value_edits[name] = value_edit
-        self._restore_buttons[name] = restore_button
 
     def _on_selected_layers_changed(self) -> None:
         if layer := self._get_selected_layer():
@@ -78,15 +66,3 @@ class ExampleQWidget(QWidget):
             text = self._value_edits["scale"].text()
             value = np.fromstring(text.strip("()[]"), sep=" ")
             layer.scale = value
-
-
-@magic_factory
-def example_magic_widget(img_layer: "napari.layers.Image"):
-    print(f"you have selected {img_layer}")
-
-
-# Uses the `autogenerate: true` flag in the plugin manifest
-# to indicate it should be wrapped as a magicgui to autogenerate
-# a widget.
-def example_function_widget(img_layer: "napari.layers.Image"):
-    print(f"you have selected {img_layer}")
