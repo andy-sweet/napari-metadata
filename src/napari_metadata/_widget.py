@@ -37,10 +37,15 @@ def _get_pixel_size(layer: "Layer", dims: "Dims") -> str:
     return str(tuple(layer.scale))
 
 
+def _get_pixel_type(layer: "Layer", dims: "Dims") -> str:
+    return str(layer.data.dtype)
+
+
 _ATTRIBUTE_GETTERS: Dict[str, Callable[["Layer", "Dims"], Any]] = {
     "name": _get_name,
     "dimensions": _get_dimensions,
     "pixel-size": _get_pixel_size,
+    "pixel-type": _get_pixel_type,
 }
 
 
@@ -69,6 +74,10 @@ def _set_pixel_size(layer: "Layer", dims: "Dims", value: str) -> None:
     layer.scale = scale
 
 
+def _set_pixel_type(layer: "Layer", dims: "Dims", value: str) -> None:
+    raise NotImplementedError("Pixel type cannot be changed.")
+
+
 def _check_dimensionality(layer: "Layer", values: Sequence) -> None:
     if len(values) != layer.ndim:
         raise RuntimeError(
@@ -81,6 +90,7 @@ _ATTRIBUTE_SETTERS: Dict[str, Callable[["Layer", "Dims", str], None]] = {
     "name": _set_name,
     "dimensions": _set_dimensions,
     "pixel-size": _set_pixel_size,
+    "pixel-type": _set_pixel_type,
 }
 
 
@@ -113,15 +123,14 @@ class QMetadataWidget(QWidget):
 
         self._attribute_layout = QGridLayout()
         self._attribute_widget.setLayout(self._attribute_layout)
-        self._add_attribute_widgets("name")
+        self._add_attribute_widgets("name", editable=True)
         self._add_attribute_widgets("dimensions", editable=True)
         self._add_attribute_widgets("pixel-size", editable=True)
+        self._add_attribute_widgets("pixel-type", editable=False)
 
         self._on_selected_layers_changed()
 
-    def _add_attribute_widgets(
-        self, name: str, *, editable: bool = False
-    ) -> None:
+    def _add_attribute_widgets(self, name: str, *, editable: bool) -> None:
         value_edit = QLineEdit("")
         value_edit.setEnabled(editable)
         value_edit.editingFinished.connect(
