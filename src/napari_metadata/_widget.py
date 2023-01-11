@@ -157,6 +157,8 @@ class QMetadataWidget(QWidget):
             # TODO: check if this can actually occur.
             return
 
+        # TODO: declare dependency between metadata attribute and layer state
+        # to make connections more automatic.
         if self._selected_layer is not None:
             self._selected_layer.events.name.disconnect(
                 self._on_selected_layer_name_changed
