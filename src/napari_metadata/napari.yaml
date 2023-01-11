@@ -30,8 +30,8 @@ contributions:
       filename_extensions: ['.npy']
   sample_data:
     - command: napari-metadata.make_sample_data
-      display_name: metadata
-      key: unique_id.1
+      display_name: Cells 3D
+      key: cells3d
   widgets:
     - command: napari-metadata.make_metadata_qwidget
       display_name: Layer metadata

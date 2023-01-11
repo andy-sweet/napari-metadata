@@ -14,10 +14,12 @@ def make_sample_data() -> List[LayerData]:
 
     membrane_data = all_data[:, 0, :, :]
     membrane_metadata = dict(shared_metadata)
+    membrane_metadata["name"] = "membrane"
     membrane_metadata["colormap"] = "magenta"
 
     nuclei_data = all_data[:, 1, :, :]
     nuclei_metadata = dict(shared_metadata)
+    nuclei_metadata["name"] = "nuclei"
     nuclei_metadata["colormap"] = "green"
 
     return [
