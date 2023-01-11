@@ -16,7 +16,7 @@ contributions:
       title: Load sample image with metadata
     - id: napari-metadata.make_qwidget
       python_name: napari_metadata._widget:ExampleQWidget
-      title: Make example QWidget
+      title: Make metadata QWidget
     - id: napari-metadata.make_magic_widget
       python_name: napari_metadata._widget:example_magic_widget
       title: Make example magic widget
