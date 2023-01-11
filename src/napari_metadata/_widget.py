@@ -1,5 +1,6 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
+import numpy as np
 from magicgui import magic_factory
 from qtpy.QtWidgets import (
     QGridLayout,
@@ -39,6 +40,9 @@ class ExampleQWidget(QWidget):
         self._attribute_widget.setLayout(self._attribute_layout)
         self._add_attribute_widgets("name")
         self._add_attribute_widgets("scale", editable=True)
+        self._value_edits["scale"].editingFinished.connect(
+            self._on_scale_changed
+        )
 
         self._on_selected_layers_changed()
 
@@ -57,20 +61,23 @@ class ExampleQWidget(QWidget):
         self._restore_buttons[name] = restore_button
 
     def _on_selected_layers_changed(self) -> None:
-        if len(self.viewer.layers.selection) == 1:
-            self._show_selected_attributes()
+        if layer := self._get_selected_layer():
+            for name in self._value_edits:
+                value = getattr(layer, name)
+                self._value_edits[name].setText(str(value))
+            self._attribute_widget.show()
         else:
-            self._hide_attributes()
+            self._attribute_widget.hide()
 
-    def _show_selected_attributes(self) -> None:
-        self._attribute_widget.show()
-        layer = next(iter(self.viewer.layers.selection))
-        for name in self._value_edits:
-            value = getattr(layer, name)
-            self._value_edits[name].setText(str(value))
+    def _get_selected_layer(self) -> Optional["napari.layers.Layer"]:
+        selection = self.viewer.layers.selection
+        return next(iter(selection)) if len(selection) > 0 else None
 
-    def _hide_attributes(self) -> None:
-        self._attribute_widget.hide()
+    def _on_scale_changed(self) -> None:
+        if layer := self._get_selected_layer():
+            text = self._value_edits["scale"].text()
+            value = np.fromstring(text.strip("()[]"), sep=" ")
+            layer.scale = value
 
 
 @magic_factory
