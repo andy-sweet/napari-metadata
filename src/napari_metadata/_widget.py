@@ -5,7 +5,7 @@ from qtpy.QtWidgets import QGridLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
 
 if TYPE_CHECKING:
     import napari
-    from napari.components import Dims
+    from napari.components import ViewerModel
     from napari.layers import Layer
 
 # Each layer metadata attribute must define a getter and setter.
@@ -23,48 +23,55 @@ if TYPE_CHECKING:
 # will then be generic instead of all being strings.
 
 
-def _get_name(layer: "Layer", dims: "Dims") -> str:
+def _get_name(layer: "Layer", viewer: "ViewerModel") -> str:
     return layer.name
 
 
-def _get_data_size(layer: "Layer", dims: "Dims") -> str:
+def _get_data_size(layer: "Layer", viewer: "ViewerModel") -> str:
     return str(layer.data.shape)
 
 
-def _get_dimensions(layer: "Layer", dims: "Dims") -> str:
+def _get_dimensions(layer: "Layer", viewer: "ViewerModel") -> str:
     ndim = layer.ndim
+    dims = viewer.dims
     all_dimensions = dims.axis_labels
     return str(tuple(all_dimensions[i] for i in dims.order[-ndim:]))
 
 
-def _get_pixel_size(layer: "Layer", dims: "Dims") -> str:
+def _get_pixel_size(layer: "Layer", viewer: "ViewerModel") -> str:
     return str(tuple(layer.scale))
 
 
-def _get_pixel_type(layer: "Layer", dims: "Dims") -> str:
+def _get_pixel_size_unit(layer: "Layer", viewer: "ViewerModel") -> str:
+    return str(viewer.scale_bar.unit)
+
+
+def _get_pixel_type(layer: "Layer", viewer: "ViewerModel") -> str:
     return str(layer.data.dtype)
 
 
-_ATTRIBUTE_GETTERS: Dict[str, Callable[["Layer", "Dims"], Any]] = {
+_ATTRIBUTE_GETTERS: Dict[str, Callable[["Layer", "ViewerModel"], Any]] = {
     "name": _get_name,
     "data-size": _get_data_size,
     "dimensions": _get_dimensions,
     "pixel-size": _get_pixel_size,
+    "pixel-size-unit": _get_pixel_size_unit,
     "pixel-type": _get_pixel_type,
 }
 
 
-def _set_name(layer: "Layer", dims: "Dims", value: str) -> None:
+def _set_name(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     layer.name = value
 
 
-def _set_data_size(layer: "Layer", dims: "Dims", value: str) -> None:
+def _set_data_size(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     raise NotImplementedError("Data size cannot be changed.")
 
 
-def _set_dimensions(layer: "Layer", dims: "Dims", value: str) -> None:
+def _set_dimensions(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     labels = tuple(map(_strip_dimension_label, value.strip("()").split(",")))
     _check_dimensionality(layer, labels)
+    dims = viewer.dims
     all_labels = list(dims.axis_labels)
     # Need noqa because pre-commit wants and doesn't want a space before
     # the colon.
@@ -77,13 +84,23 @@ def _strip_dimension_label(label: str) -> str:
     return label.strip().strip("'\"")
 
 
-def _set_pixel_size(layer: "Layer", dims: "Dims", value: str) -> None:
+def _set_pixel_size(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     scale = tuple(map(float, value.strip("()").split(",")))
     _check_dimensionality(layer, scale)
     layer.scale = scale
 
 
-def _set_pixel_type(layer: "Layer", dims: "Dims", value: str) -> None:
+def _set_pixel_size_unit(
+    layer: "Layer", viewer: "ViewerModel", value: str
+) -> None:
+    # TODO: coercion from None should be really handled gracefully by napari
+    # because the declared type of the field is Optional[str].
+    if value.lower() in {"", "none", "pixel", "pixels"}:
+        value = None
+    viewer.scale_bar.unit = value
+
+
+def _set_pixel_type(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     raise NotImplementedError("Pixel type cannot be changed.")
 
 
@@ -95,11 +112,14 @@ def _check_dimensionality(layer: "Layer", values: Sequence) -> None:
         )
 
 
-_ATTRIBUTE_SETTERS: Dict[str, Callable[["Layer", "Dims", str], None]] = {
+_ATTRIBUTE_SETTERS: Dict[
+    str, Callable[["Layer", "ViewerModel", str], None]
+] = {
     "name": _set_name,
     "data-size": _set_data_size,
     "dimensions": _set_dimensions,
     "pixel-size": _set_pixel_size,
+    "pixel-size-unit": _set_pixel_size_unit,
     "pixel-type": _set_pixel_type,
 }
 
@@ -134,6 +154,7 @@ class QMetadataWidget(QWidget):
         self._add_attribute_widgets("data-size", editable=False)
         self._add_attribute_widgets("dimensions", editable=True)
         self._add_attribute_widgets("pixel-size", editable=True)
+        self._add_attribute_widgets("pixel-size-unit", editable=True)
         self._add_attribute_widgets("pixel-type", editable=False)
 
         self._on_selected_layers_changed()
@@ -187,13 +208,13 @@ class QMetadataWidget(QWidget):
         return next(iter(selection)) if len(selection) > 0 else None
 
     def _update_attribute(self, layer: "Layer", name: str) -> None:
-        text = _ATTRIBUTE_GETTERS[name](layer, self.viewer.dims)
+        text = _ATTRIBUTE_GETTERS[name](layer, self.viewer)
         self._value_edits[name].setText(text)
 
     def _on_attribute_text_changed(self, name: str) -> None:
         if layer := self._get_selected_layer():
             text = self._value_edits[name].text()
-            _ATTRIBUTE_SETTERS[name](layer, self.viewer.dims, text)
+            _ATTRIBUTE_SETTERS[name](layer, self.viewer, text)
 
     def _on_dims_axis_labels_changed(self) -> None:
         if layer := self._get_selected_layer():
