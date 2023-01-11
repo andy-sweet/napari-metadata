@@ -109,6 +109,7 @@ class QMetadataWidget(QWidget):
         super().__init__()
         self._value_edits = {}
         self.viewer = viewer
+        self._selected_layer = None
 
         self.viewer.layers.selection.events.changed.connect(
             self._on_selected_layers_changed
@@ -117,10 +118,6 @@ class QMetadataWidget(QWidget):
         self.viewer.dims.events.axis_labels.connect(
             self._on_dims_axis_labels_changed
         )
-
-        # TODO: need to respond to changes to the relevant model state of the
-        # currently selected layer. We could do this by connecting to those
-        # events in _on_selected_layers_changed (and disconnecting old ones).
 
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -154,12 +151,34 @@ class QMetadataWidget(QWidget):
         self._value_edits[name] = value_edit
 
     def _on_selected_layers_changed(self) -> None:
-        if layer := self._get_selected_layer():
+        layer = self._get_selected_layer()
+
+        if layer == self._selected_layer:
+            # TODO: check if this can actually occur.
+            return
+
+        if self._selected_layer is not None:
+            self._selected_layer.events.name.disconnect(
+                self._on_selected_layer_name_changed
+            )
+            self._selected_layer.events.data.disconnect(
+                self._on_selected_layer_data_changed
+            )
+            self._selected_layer.events.scale.disconnect(
+                self._on_selected_layer_scale_changed
+            )
+
+        if layer is not None:
+            layer.events.name.connect(self._on_selected_layer_name_changed)
+            layer.events.data.connect(self._on_selected_layer_data_changed)
+            layer.events.scale.connect(self._on_selected_layer_scale_changed)
             for name in self._value_edits:
                 self._update_attribute(layer, name)
             self._attribute_widget.show()
         else:
             self._attribute_widget.hide()
+
+        self._selected_layer = layer
 
     def _get_selected_layer(self) -> Optional["Layer"]:
         selection = self.viewer.layers.selection
@@ -177,3 +196,16 @@ class QMetadataWidget(QWidget):
     def _on_dims_axis_labels_changed(self) -> None:
         if layer := self._get_selected_layer():
             self._update_attribute(layer, "dimensions")
+
+    def _on_selected_layer_name_changed(self) -> None:
+        if layer := self._get_selected_layer():
+            self._update_attribute(layer, "name")
+
+    def _on_selected_layer_data_changed(self) -> None:
+        if layer := self._get_selected_layer():
+            self._update_attribute(layer, "data-size")
+            self._update_attribute(layer, "pixel-type")
+
+    def _on_selected_layer_scale_changed(self) -> None:
+        if layer := self._get_selected_layer():
+            self._update_attribute(layer, "pixel-size")
