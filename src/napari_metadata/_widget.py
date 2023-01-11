@@ -27,6 +27,10 @@ def _get_name(layer: "Layer", dims: "Dims") -> str:
     return layer.name
 
 
+def _get_data_size(layer: "Layer", dims: "Dims") -> str:
+    return str(layer.data.shape)
+
+
 def _get_dimensions(layer: "Layer", dims: "Dims") -> str:
     ndim = layer.ndim
     all_dimensions = dims.axis_labels
@@ -43,6 +47,7 @@ def _get_pixel_type(layer: "Layer", dims: "Dims") -> str:
 
 _ATTRIBUTE_GETTERS: Dict[str, Callable[["Layer", "Dims"], Any]] = {
     "name": _get_name,
+    "data-size": _get_data_size,
     "dimensions": _get_dimensions,
     "pixel-size": _get_pixel_size,
     "pixel-type": _get_pixel_type,
@@ -51,6 +56,10 @@ _ATTRIBUTE_GETTERS: Dict[str, Callable[["Layer", "Dims"], Any]] = {
 
 def _set_name(layer: "Layer", dims: "Dims", value: str) -> None:
     layer.name = value
+
+
+def _set_data_size(layer: "Layer", dims: "Dims", value: str) -> None:
+    raise NotImplementedError("Data size cannot be changed.")
 
 
 def _set_dimensions(layer: "Layer", dims: "Dims", value: str) -> None:
@@ -88,6 +97,7 @@ def _check_dimensionality(layer: "Layer", values: Sequence) -> None:
 
 _ATTRIBUTE_SETTERS: Dict[str, Callable[["Layer", "Dims", str], None]] = {
     "name": _set_name,
+    "data-size": _set_data_size,
     "dimensions": _set_dimensions,
     "pixel-size": _set_pixel_size,
     "pixel-type": _set_pixel_type,
@@ -124,6 +134,7 @@ class QMetadataWidget(QWidget):
         self._attribute_layout = QGridLayout()
         self._attribute_widget.setLayout(self._attribute_layout)
         self._add_attribute_widgets("name", editable=True)
+        self._add_attribute_widgets("data-size", editable=False)
         self._add_attribute_widgets("dimensions", editable=True)
         self._add_attribute_widgets("pixel-size", editable=True)
         self._add_attribute_widgets("pixel-type", editable=False)
