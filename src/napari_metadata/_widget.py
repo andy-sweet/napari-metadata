@@ -27,6 +27,10 @@ def _get_name(layer: "Layer", viewer: "ViewerModel") -> str:
     return layer.name
 
 
+def _get_file_path(layer: "Layer", viewer: "ViewerModel") -> str:
+    return str(layer.source.path)
+
+
 def _get_data_size(layer: "Layer", viewer: "ViewerModel") -> str:
     return str(layer.data.shape)
 
@@ -52,6 +56,7 @@ def _get_pixel_type(layer: "Layer", viewer: "ViewerModel") -> str:
 
 _ATTRIBUTE_GETTERS: Dict[str, Callable[["Layer", "ViewerModel"], Any]] = {
     "name": _get_name,
+    "file-path": _get_file_path,
     "data-size": _get_data_size,
     "dimensions": _get_dimensions,
     "pixel-size": _get_pixel_size,
@@ -62,6 +67,10 @@ _ATTRIBUTE_GETTERS: Dict[str, Callable[["Layer", "ViewerModel"], Any]] = {
 
 def _set_name(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     layer.name = value
+
+
+def _set_file_path(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
+    raise NotImplementedError("File path cannot be changed.")
 
 
 def _set_data_size(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
@@ -116,6 +125,7 @@ _ATTRIBUTE_SETTERS: Dict[
     str, Callable[["Layer", "ViewerModel", str], None]
 ] = {
     "name": _set_name,
+    "file-path": _set_file_path,
     "data-size": _set_data_size,
     "dimensions": _set_dimensions,
     "pixel-size": _set_pixel_size,
@@ -151,6 +161,7 @@ class QMetadataWidget(QWidget):
         self._attribute_layout = QGridLayout()
         self._attribute_widget.setLayout(self._attribute_layout)
         self._add_attribute_widgets("name", editable=True)
+        self._add_attribute_widgets("file-path", editable=False)
         self._add_attribute_widgets("data-size", editable=False)
         self._add_attribute_widgets("dimensions", editable=True)
         self._add_attribute_widgets("pixel-size", editable=True)
@@ -161,6 +172,8 @@ class QMetadataWidget(QWidget):
 
     def _add_attribute_widgets(self, name: str, *, editable: bool) -> None:
         value_edit = QLineEdit("")
+        # TODO: consider changing this to setReadOnly, though that triggers
+        # editingFinished, which may raise an error.
         value_edit.setEnabled(editable)
         value_edit.editingFinished.connect(
             partial(self._on_attribute_text_changed, name)
