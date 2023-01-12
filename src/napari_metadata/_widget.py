@@ -31,6 +31,15 @@ def _get_file_path(layer: "Layer", viewer: "ViewerModel") -> str:
     return str(layer.source.path)
 
 
+def _get_plugin(layer: "Layer", viewer: "ViewerModel") -> str:
+    source = layer.source
+    return (
+        str(source.reader_plugin)
+        if source.sample is None
+        else str(source.sample)
+    )
+
+
 def _get_data_size(layer: "Layer", viewer: "ViewerModel") -> str:
     return str(layer.data.shape)
 
@@ -57,6 +66,7 @@ def _get_pixel_type(layer: "Layer", viewer: "ViewerModel") -> str:
 _ATTRIBUTE_GETTERS: Dict[str, Callable[["Layer", "ViewerModel"], Any]] = {
     "name": _get_name,
     "file-path": _get_file_path,
+    "plugin": _get_plugin,
     "data-size": _get_data_size,
     "dimensions": _get_dimensions,
     "pixel-size": _get_pixel_size,
@@ -71,6 +81,10 @@ def _set_name(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
 
 def _set_file_path(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     raise NotImplementedError("File path cannot be changed.")
+
+
+def _set_plugin(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
+    raise NotImplementedError("Plugin cannot be changed.")
 
 
 def _set_data_size(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
@@ -126,6 +140,7 @@ _ATTRIBUTE_SETTERS: Dict[
 ] = {
     "name": _set_name,
     "file-path": _set_file_path,
+    "plugin": _set_plugin,
     "data-size": _set_data_size,
     "dimensions": _set_dimensions,
     "pixel-size": _set_pixel_size,
@@ -162,6 +177,7 @@ class QMetadataWidget(QWidget):
         self._attribute_widget.setLayout(self._attribute_layout)
         self._add_attribute_widgets("name", editable=True)
         self._add_attribute_widgets("file-path", editable=False)
+        self._add_attribute_widgets("plugin", editable=False)
         self._add_attribute_widgets("data-size", editable=False)
         self._add_attribute_widgets("dimensions", editable=True)
         self._add_attribute_widgets("pixel-size", editable=True)
