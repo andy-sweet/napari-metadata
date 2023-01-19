@@ -305,6 +305,7 @@ class QMetadataWidget(QWidget):
         path = QFileDialog.getExistingDirectory(
             parent=self,
             caption="Open napari layer with metadata",
+            options=QFileDialog.DontUseNativeDialog,
         )
 
         # TODO: understand if path is Optional[str] or str.
@@ -330,8 +331,10 @@ class QMetadataWidget(QWidget):
             parent=self,
             caption="Save napari layer with metadata",
             filter="napari layer (*.zapari)",
+            options=QFileDialog.DontUseNativeDialog,
         )
-        if path is None:
+        # TODO: understand if path is Optional[str] or str.
+        if path is None or len(path) == 0:
             return
 
         layer = self._get_selected_layer()
