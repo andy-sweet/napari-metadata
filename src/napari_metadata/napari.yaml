@@ -2,32 +2,12 @@ name: napari-metadata
 display_name: Metadata
 contributions:
   commands:
-    - id: napari-metadata.get_reader
-      python_name: napari_metadata._reader:napari_get_reader
-      title: Open data with metadata
-    - id: napari-metadata.write_multiple
-      python_name: napari_metadata._writer:write_multiple
-      title: Save multi-layer data with metadata
-    - id: napari-metadata.write_single_image
-      python_name: napari_metadata._writer:write_single_image
-      title: Save image data with metadata
     - id: napari-metadata.make_sample_data
       python_name: napari_metadata._sample_data:make_sample_data
       title: Load sample image with metadata
     - id: napari-metadata.make_metadata_qwidget
       python_name: napari_metadata._widget:QMetadataWidget
       title: Make metadata Qt widget
-  readers:
-    - command: napari-metadata.get_reader
-      accepts_directories: false
-      filename_patterns: ['*.npy']
-  writers:
-    - command: napari-metadata.write_multiple
-      layer_types: ['image*','labels*']
-      filename_extensions: []
-    - command: napari-metadata.write_single_image
-      layer_types: ['image']
-      filename_extensions: ['.npy']
   sample_data:
     - command: napari-metadata.make_sample_data
       display_name: Cells 3D
