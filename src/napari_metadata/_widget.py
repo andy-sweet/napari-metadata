@@ -178,10 +178,14 @@ class QMetadataWidget(QWidget):
             self._on_dims_axis_labels_changed
         )
 
+        self.viewer.scale_bar.events.unit.connect(
+            self._on_scale_bar_units_changed
+        )
+
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        description = QLabel("Open and save layers to OME-ZARR")
+        description = QLabel("Open and save a layer with metadata")
         layout.addWidget(description)
 
         self._io_widget = QWidget()
@@ -280,6 +284,10 @@ class QMetadataWidget(QWidget):
         if layer := self._get_selected_layer():
             self._update_attribute(layer, "dimensions")
 
+    def _on_scale_bar_units_changed(self) -> None:
+        if layer := self._get_selected_layer():
+            self._update_attribute(layer, "pixel-size-unit")
+
     def _on_selected_layer_name_changed(self) -> None:
         if layer := self._get_selected_layer():
             self._update_attribute(layer, "name")
@@ -298,7 +306,9 @@ class QMetadataWidget(QWidget):
             parent=self,
             caption="Open napari layer with metadata",
         )
-        if path is None:
+
+        # TODO: understand if path is Optional[str] or str.
+        if path is None or len(path) == 0:
             return
 
         # TODO: consider using ome_zarr Reader directly to have more control
