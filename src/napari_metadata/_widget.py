@@ -18,7 +18,6 @@ from qtpy.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    import napari
     from napari.components import ViewerModel
     from napari.layers import Layer
 
@@ -164,10 +163,10 @@ _ATTRIBUTE_SETTERS: Dict[
 
 
 class QMetadataWidget(QWidget):
-    def __init__(self, viewer: "napari.viewer.Viewer"):
+    def __init__(self, napari_viewer: "ViewerModel"):
         super().__init__()
         self._value_edits = {}
-        self.viewer = viewer
+        self.viewer = napari_viewer
         self._selected_layer = None
 
         self.viewer.layers.selection.events.changed.connect(

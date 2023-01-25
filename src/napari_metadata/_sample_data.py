@@ -1,10 +1,12 @@
-from typing import List
+from typing import TYPE_CHECKING, List
 
-from npe2.types import LayerData
 from skimage.data import cells3d
 
+if TYPE_CHECKING:
+    from npe2.types import LayerData
 
-def make_sample_data() -> List[LayerData]:
+
+def make_sample_data() -> List["LayerData"]:
     all_data = cells3d()
 
     shared_metadata = {
