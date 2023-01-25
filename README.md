@@ -1,23 +1,28 @@
 # napari-metadata
 
-[![License BSD-3](https://img.shields.io/pypi/l/napari-metadata.svg?color=green)](https://github.com/andy-sweet/napari-metadata/raw/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/napari-metadata.svg?color=green)](https://pypi.org/project/napari-metadata)
-[![Python Version](https://img.shields.io/pypi/pyversions/napari-metadata.svg?color=green)](https://python.org)
 [![tests](https://github.com/andy-sweet/napari-metadata/workflows/tests/badge.svg)](https://github.com/andy-sweet/napari-metadata/actions)
 [![codecov](https://codecov.io/gh/andy-sweet/napari-metadata/branch/main/graph/badge.svg)](https://codecov.io/gh/andy-sweet/napari-metadata)
-[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-metadata)](https://napari-hub.org/plugins/napari-metadata)
 
-View and edit layer metadata.
+This is a [napari] plugin that expands the functionality of napari's handling of layer metadata.
+It exercises napari's existing metadata-related API to provide a GUI to inspect, control, read,
+and write some key metadata attributes.
+
+In its current form, this plugin is intended to be rough, not widely distributed, and not formally supported.
+Instead I'm trying to understand how much napari can currently support some desired use cases around metadata.
+After some amount of progress, the plan is to either pursue this as a fully fledged plugin or look for ways
+to push related improvements upstream to napari and other metadata-related plugins.
+
+Therefore, at the time of writing, I recommend not depending on this plugin and its code in this repository in any way.
+If you have ideas or comments about this work, feel free to [file an issue].
+I'll also try to track any efforts I'm currently working with issues.
 
 ## Installation
 
-You can install `napari-metadata` via [pip]:
-
-    pip install napari-metadata
-
-To install latest development version :
+You can install the latest development version of `napari-metadata` via [pip]:
 
     pip install git+https://github.com/andy-sweet/napari-metadata.git
+
+Alternatively, fork or clone this repository directly.
 
 ## Contributing
 
@@ -34,19 +39,5 @@ Distributed under the terms of the [BSD-3] license,
 If you encounter any problems, please [file an issue] along with a detailed description.
 
 [napari]: https://github.com/napari/napari
-[Cookiecutter]: https://github.com/audreyr/cookiecutter
-[@napari]: https://github.com/napari
-[MIT]: http://opensource.org/licenses/MIT
 [BSD-3]: http://opensource.org/licenses/BSD-3-Clause
-[GNU GPL v3.0]: http://www.gnu.org/licenses/gpl-3.0.txt
-[GNU LGPL v3.0]: http://www.gnu.org/licenses/lgpl-3.0.txt
-[Apache Software License 2.0]: http://www.apache.org/licenses/LICENSE-2.0
-[Mozilla Public License 2.0]: https://www.mozilla.org/media/MPL/2.0/index.txt
-[cookiecutter-napari-plugin]: https://github.com/napari/cookiecutter-napari-plugin
-
 [file an issue]: https://github.com/andy-sweet/napari-metadata/issues
-
-[napari]: https://github.com/napari/napari
-[tox]: https://tox.readthedocs.io/en/latest/
-[pip]: https://pypi.org/project/pip/
-[PyPI]: https://pypi.org/

@@ -316,7 +316,8 @@ class QMetadataWidget(QWidget):
         # here for reading multiple layers.
         if reader := napari_ome_zarr.napari_get_reader(path):
             for layer_tuple in reader(path):
-                # TODO: any public version of this?
+                # TODO: could use public Layer.create, but that requires
+                # importing Layer and explicitly depending on napari.
                 self.viewer._add_layer_from_data(*layer_tuple)
 
         # Read viewer wide metadata after adding layers so that axis labels
@@ -330,12 +331,15 @@ class QMetadataWidget(QWidget):
         path, format = QFileDialog.getSaveFileName(
             parent=self,
             caption="Save napari layer with metadata",
-            filter="napari layer (*.zapari)",
+            filter="napari layer (*.zarr)",
             options=QFileDialog.DontUseNativeDialog,
         )
         # TODO: understand if path is Optional[str] or str.
         if path is None or len(path) == 0:
             return
+
+        # TODO: I thought QFileDialog did this automatically, but maybe not?
+        path = path if path.endswith(".zarr") else path + ".zarr"
 
         layer = self._get_selected_layer()
         if layer is None:
