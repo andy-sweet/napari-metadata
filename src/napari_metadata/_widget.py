@@ -1,5 +1,6 @@
 import os
 from abc import abstractmethod
+from enum import Enum, auto
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence
 
@@ -23,6 +24,16 @@ from qtpy.QtWidgets import (
 if TYPE_CHECKING:
     from napari.components import Dims, ViewerModel
     from napari.layers import Layer
+
+
+class AxisType(Enum):
+    SPACE = auto()
+    TIME = auto()
+    CHANNEL = auto()
+
+    def __str__(self) -> str:
+        return self.name
+
 
 # Each layer metadata attribute must define a getter and setter.
 # The getter takes inputs from napari's model (e.g. the selected layer)
@@ -227,6 +238,7 @@ class AxisWidget(QWidget):
         self.name = QLineEdit()
         self.layout().addWidget(self.name)
         self.type = QComboBox()
+        self.type.addItems([m.name for m in AxisType])
         self.layout().addWidget(self.type)
 
 
