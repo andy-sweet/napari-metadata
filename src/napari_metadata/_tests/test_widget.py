@@ -82,6 +82,32 @@ def test_selected_layer_from_3d_to_2d(qtbot):
     assert are_axis_widgets_enabled(widget) == (False, True, True)
 
 
+def test_add_2d_image_to_3d_image(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3, 2)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    assert are_axis_widgets_enabled(widget) == (True, True, True)
+
+    viewer.add_image(np.empty((4, 3)))
+
+    assert viewer.layers.selection == {viewer.layers[1]}
+    assert are_axis_widgets_enabled(widget) == (False, True, True)
+
+
+def test_add_3d_image_to_2d_image(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    assert are_axis_widgets_enabled(widget) == (True, True)
+
+    viewer.add_image(np.empty((4, 3, 2)))
+
+    assert viewer.layers.selection == {viewer.layers[1]}
+    assert are_axis_widgets_enabled(widget) == (True, True, True)
+
+
 def axis_names(widget: QMetadataWidget) -> Tuple[str]:
     return tuple(widget._axes_widget.axis_names())
 
