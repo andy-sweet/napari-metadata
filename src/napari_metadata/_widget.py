@@ -235,7 +235,10 @@ class AxesWidget(AttributeWidget):
         self, parent: Optional["QWidget"], viewer: "ViewerModel"
     ) -> None:
         super().__init__(parent, viewer)
-        self.setLayout(QVBoxLayout())
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Layer dimensions"))
+        layout.setSpacing(2)
+        self.setLayout(layout)
         # Need to reconsider if we want to support multiple viewers.
         viewer.dims.events.axis_labels.connect(
             self._on_viewer_dims_axis_labels_changed
@@ -252,7 +255,7 @@ class AxesWidget(AttributeWidget):
         pass
 
     def _update_num_axes(self, num_axes: int) -> None:
-        num_widgets: int = self.layout().count()
+        num_widgets: int = self.layout().count() - 1
         # Add any missing widgets.
         for _ in range(num_axes - num_widgets):
             self.layout().addWidget(AxisWidget(self))
@@ -275,7 +278,7 @@ class AxesWidget(AttributeWidget):
         # Implied cast from QLayoutItem to AxisWidget
         return [
             self.layout().itemAt(i).widget()
-            for i in range(self.layout().count())
+            for i in range(1, self.layout().count())
         ]
 
 
