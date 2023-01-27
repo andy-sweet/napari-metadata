@@ -35,7 +35,6 @@ class AxesTypeWidget(QWidget):
         super().__init__(parent)
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Layer dimensions"))
-        layout.setSpacing(2)
         self.setLayout(layout)
         # Need to reconsider if we want to support multiple viewers.
         viewer.dims.events.axis_labels.connect(

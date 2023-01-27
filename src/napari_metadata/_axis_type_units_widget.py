@@ -29,7 +29,6 @@ class AxesTypeUnitsWidget(QWidget):
     ) -> None:
         super().__init__(parent)
         layout = QVBoxLayout()
-        layout.setSpacing(2)
         layout.addWidget(QLabel("Dimension units"))
         self.space = AxisTypeUnitsWidget(
             self, str(AxisType.SPACE), SpaceUnits.names()
