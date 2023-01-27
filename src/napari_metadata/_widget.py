@@ -220,7 +220,7 @@ class QMetadataWidget(QWidget):
             for name in self._value_edits:
                 self._update_attribute(layer, name)
 
-            self._axes_widget.update(self.viewer, layer)
+            self._axes_widget.set_selected_layer(layer)
 
             self._attribute_widget.show()
         else:

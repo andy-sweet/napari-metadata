@@ -20,11 +20,12 @@ if TYPE_CHECKING:
 class AxisTypeWidget(QWidget):
     def __init__(self, parent: Optional["QWidget"]) -> None:
         super().__init__(parent)
-        self.setLayout(QHBoxLayout())
         self.name = QLineEdit()
-        self.layout().addWidget(self.name)
         self.type = QComboBox()
         self.type.addItems(AxisType.names())
+
+        self.setLayout(QHBoxLayout())
+        self.layout().addWidget(self.name)
         self.layout().addWidget(self.type)
 
 
@@ -33,34 +34,25 @@ class AxesTypeWidget(QWidget):
         self, parent: Optional["QWidget"], viewer: "ViewerModel"
     ) -> None:
         super().__init__(parent)
+
         layout = QVBoxLayout()
         layout.addWidget(QLabel("View and edit viewer axes types"))
         self.setLayout(layout)
-        # Need to reconsider if we want to support multiple viewers.
-        viewer.dims.events.axis_labels.connect(
+
+        self._viewer: "ViewerModel" = viewer
+        self._viewer.dims.events.axis_labels.connect(
             self._on_viewer_dims_axis_labels_changed
         )
-        self._layer: Optional["Layer"] = None
-        self._viewer: "ViewerModel" = viewer
-        self._update_num_axes(viewer.dims.ndim)
-        self._set_axis_names(viewer.dims.axis_labels)
+        self.set_selected_layer(None)
 
-    def update(self, viewer: "ViewerModel", layer: "Layer") -> None:
-        self._update_num_axes(viewer.dims.ndim)
-        self._set_axis_names(viewer.dims.axis_labels)
-        self._on_layer_changed(layer)
-
-    def _on_layer_changed(self, layer: "Layer") -> None:
-        self._layer = layer
-        ndim_diff = self._viewer.dims.ndim - self._layer.ndim
-        for i, widget in enumerate(self.axis_widgets()):
-            widget.setEnabled(i >= ndim_diff)
-
-    def connect_layer(self, layer: "Layer") -> None:
-        pass
-
-    def disconnect_layer(self, layer: "Layer") -> None:
-        pass
+    def set_selected_layer(self, layer: Optional["Layer"]) -> None:
+        dims = self._viewer.dims
+        self._update_num_axes(dims.ndim)
+        self._set_axis_names(dims.axis_labels)
+        if layer is not None:
+            ndim_diff = dims.ndim - layer.ndim
+            for i, widget in enumerate(self.axis_widgets()):
+                widget.setEnabled(i >= ndim_diff)
 
     def _update_num_axes(self, num_axes: int) -> None:
         num_widgets: int = self.layout().count() - 1
