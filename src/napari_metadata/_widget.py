@@ -1,70 +1,28 @@
 import os
-from enum import Enum, auto
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence
 
 import napari_ome_zarr
 import zarr
 from ome_zarr.io import parse_url
 from ome_zarr.writer import write_image
 from qtpy.QtWidgets import (
-    QComboBox,
     QFileDialog,
     QGridLayout,
     QHBoxLayout,
     QLabel,
-    QLayoutItem,
     QLineEdit,
     QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
+from napari_metadata._axis_type_units_widget import AxesTypeUnitsWidget
+from napari_metadata._axis_type_widget import AxesTypeWidget
+
 if TYPE_CHECKING:
-    from napari.components import Dims, ViewerModel
+    from napari.components import ViewerModel
     from napari.layers import Layer
-
-
-class AxisType(Enum):
-    SPACE = auto()
-    TIME = auto()
-    CHANNEL = auto()
-
-    def __str__(self) -> str:
-        return self.name.lower()
-
-    @classmethod
-    def names(cls) -> List[str]:
-        return [str(m) for m in cls]
-
-
-class SpaceUnits(Enum):
-    NANOMETERS = auto()
-    MICROMETERS = auto()
-    MILLIMETERS = auto()
-    CENTIMETERS = auto()
-    METERS = auto()
-
-    def __str__(self) -> str:
-        return self.name.lower()
-
-    @classmethod
-    def names(cls) -> List[str]:
-        return [str(m) for m in cls]
-
-
-class TimeUnits(Enum):
-    NANOSECONDS = auto()
-    MICROSECONDS = auto()
-    MILLISECONDS = auto()
-    SECONDS = auto()
-
-    def __str__(self) -> str:
-        return self.name.lower()
-
-    @classmethod
-    def names(cls) -> List[str]:
-        return [str(m) for m in cls]
 
 
 # Each layer metadata attribute must define a getter and setter.
@@ -80,42 +38,6 @@ class TimeUnits(Enum):
 # This design pattern should also be generalizable to more complex edit
 # widgets (i.e. not just line edit widgets), but the input/output value
 # will then be generic instead of all being strings.
-
-
-# How to group axis widgets?
-#
-# - index: not asked for, unsure if useful
-#   - array-axis index
-#   - implied by order
-# - name: always present
-# - type: likely present, not used by napari, written to ome-ngff,
-#   constrains unit choices
-# - unit: needs to present somewhere, but not necessarily per-axis
-#   - could be per-type, or viewer wide
-#   - if it's per type, we could infer viewer-wide/canvas unit
-#     (with a warning if types/units are mixed)
-#   - similar inference possible with per-axis, but maybe less useful?
-# - pixel-size
-#   - consider rename to spacing (maybe scale)
-#   - must be per axis
-#   - don't need to do this yet
-# - offset/translation
-#   - should be treated similarly to pixel-size
-#   - def out of scope for this issue
-
-# let's just focus on name, type, unit
-# then there are two options
-#
-# 1. Row per axis with: name, type.
-#   - Then one extra row in form for each type: type, unit
-#   - This is similar to the design and imagej
-#   - If visualized axes have mixed types, issue warning from plugin
-#
-# 2. Row per axis with: name, type, unit
-#   - If visualized axes have mixed units, issue warning from plugin
-#
-# Decision: go with 1 for now
-#   - if we add pixel size / offset to same row, we can always show that unit
 
 
 def _get_name(layer: "Layer", viewer: "ViewerModel") -> str:
@@ -244,138 +166,6 @@ _ATTRIBUTE_SETTERS: Dict[
 }
 
 
-class AxisWidget(QWidget):
-    def __init__(self, parent: Optional["QWidget"]) -> None:
-        super().__init__(parent)
-        self.setLayout(QHBoxLayout())
-        self.name = QLineEdit()
-        self.layout().addWidget(self.name)
-        self.type = QComboBox()
-        self.type.addItems(AxisType.names())
-        self.layout().addWidget(self.type)
-
-
-class AxesWidget(QWidget):
-    def __init__(
-        self, parent: Optional["QWidget"], viewer: "ViewerModel"
-    ) -> None:
-        super().__init__(parent)
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("Layer dimensions"))
-        layout.setSpacing(2)
-        self.setLayout(layout)
-        # Need to reconsider if we want to support multiple viewers.
-        viewer.dims.events.axis_labels.connect(
-            self._on_viewer_dims_axis_labels_changed
-        )
-        self._layer: Optional["Layer"] = None
-        self._viewer: "ViewerModel" = viewer
-
-    def update(self, viewer: "ViewerModel", layer: "Layer") -> None:
-        self._on_layer_changed(layer)
-        self._set_axis_names(viewer.dims.axis_labels)
-
-    def _on_layer_changed(self, layer: "Layer") -> None:
-        self._layer = layer
-        self._update_num_axes(layer.ndim)
-
-    def connect_layer(self, layer: "Layer") -> None:
-        pass
-
-    def disconnect_layer(self, layer: "Layer") -> None:
-        pass
-
-    def _update_num_axes(self, num_axes: int) -> None:
-        num_widgets: int = self.layout().count() - 1
-        # Add any missing widgets.
-        for _ in range(num_axes - num_widgets):
-            widget = self._make_axis_widget()
-            self.layout().addWidget(widget)
-        # Remove any unneeded widgets.
-        for i in range(num_widgets - num_axes):
-            # +1 because first widget is label
-            # TODO: better solution needed!
-            item: QLayoutItem = self.layout().takeAt(num_widgets - i + 1)
-            # Need to unparent? Instead of deleting?
-            item.widget().deleteLater()
-
-    def _make_axis_widget(self) -> None:
-        widget = AxisWidget(self)
-        widget.name.textChanged.connect(self._on_axis_name_changed)
-        return widget
-
-    def _on_viewer_dims_axis_labels_changed(self, event) -> None:
-        self._set_axis_names(event.value)
-
-    def _set_axis_names(self, names: List[str]) -> None:
-        widgets = self._widgets()
-        assert len(names) == len(widgets)
-        for name, widget in zip(names, widgets):
-            widget.name.setText(name)
-
-    def _widgets(self) -> List[AxisWidget]:
-        # Implied cast from QLayoutItem to AxisWidget
-        return [
-            self.layout().itemAt(i).widget()
-            for i in range(1, self.layout().count())
-        ]
-
-    def _on_axis_name_changed(self) -> None:
-        names = [widget.name.text() for widget in self._widgets()]
-        dims: "Dims" = self._viewer.dims
-        all_labels = list(dims.axis_labels)
-        # Need noqa because pre-commit wants and doesn't want a space before
-        # the colon.
-        all_labels[-self._layer.ndim :] = names  # noqa
-        dims.axis_labels = all_labels
-
-
-class AxisTypeUnitsWidget(QWidget):
-    def __init__(
-        self, parent: Optional["QWidget"], name: str, unit_types: List[str]
-    ) -> None:
-        super().__init__(parent)
-        self.setLayout(QHBoxLayout())
-        self.type = QLabel(name)
-        self.layout().addWidget(self.type)
-        self.units = QComboBox()
-        self.units.addItems(unit_types)
-        self.layout().addWidget(self.units)
-
-
-class AxesTypeUnitsWidget(QWidget):
-    def __init__(
-        self, parent: Optional["QWidget"], viewer: "ViewerModel"
-    ) -> None:
-        super().__init__(parent)
-        layout = QVBoxLayout()
-        layout.setSpacing(2)
-        layout.addWidget(QLabel("Dimension units"))
-        self.space = AxisTypeUnitsWidget(
-            self, str(AxisType.SPACE), SpaceUnits.names()
-        )
-        layout.addWidget(self.space)
-        self.time = AxisTypeUnitsWidget(
-            self, str(AxisType.TIME), TimeUnits.names()
-        )
-        layout.addWidget(self.time)
-        self.setLayout(layout)
-        self._viewer = viewer
-        self.space.units.currentTextChanged.connect(
-            self._on_space_units_changed
-        )
-        self._on_space_units_changed()
-        self._viewer.scale_bar.events.unit.connect(
-            self._on_viewer_scale_bar_unit_changed
-        )
-
-    def _on_space_units_changed(self) -> None:
-        self._viewer.scale_bar.unit = self.space.units.currentText()
-
-    def _on_viewer_scale_bar_unit_changed(self, event) -> None:
-        self.space.units.setCurrentText(event.value)
-
-
 class QMetadataWidget(QWidget):
     def __init__(self, napari_viewer: "ViewerModel"):
         super().__init__()
@@ -432,7 +222,7 @@ class QMetadataWidget(QWidget):
         self._add_attribute_widgets("pixel-size-unit", editable=True)
         self._add_attribute_widgets("pixel-type", editable=False)
 
-        self._axes_widget = AxesWidget(self, napari_viewer)
+        self._axes_widget = AxesTypeWidget(self, napari_viewer)
         layout.addWidget(self._axes_widget)
 
         self._types_widget = AxesTypeUnitsWidget(self, napari_viewer)
