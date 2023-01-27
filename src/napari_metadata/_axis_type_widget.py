@@ -34,7 +34,7 @@ class AxesTypeWidget(QWidget):
     ) -> None:
         super().__init__(parent)
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Layer dimensions"))
+        layout.addWidget(QLabel("View and edit viewer axes types"))
         self.setLayout(layout)
         # Need to reconsider if we want to support multiple viewers.
         viewer.dims.events.axis_labels.connect(
