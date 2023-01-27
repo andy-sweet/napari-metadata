@@ -1,5 +1,4 @@
 import os
-from abc import abstractmethod
 from enum import Enum, auto
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence
@@ -32,7 +31,40 @@ class AxisType(Enum):
     CHANNEL = auto()
 
     def __str__(self) -> str:
-        return self.name
+        return self.name.lower()
+
+    @classmethod
+    def names(cls) -> List[str]:
+        return [str(m) for m in cls]
+
+
+class SpaceUnits(Enum):
+    NANOMETERS = auto()
+    MICROMETERS = auto()
+    MILLIMETERS = auto()
+    CENTIMETERS = auto()
+    METERS = auto()
+
+    def __str__(self) -> str:
+        return self.name.lower()
+
+    @classmethod
+    def names(cls) -> List[str]:
+        return [str(m) for m in cls]
+
+
+class TimeUnits(Enum):
+    NANOSECONDS = auto()
+    MICROSECONDS = auto()
+    MILLISECONDS = auto()
+    SECONDS = auto()
+
+    def __str__(self) -> str:
+        return self.name.lower()
+
+    @classmethod
+    def names(cls) -> List[str]:
+        return [str(m) for m in cls]
 
 
 # Each layer metadata attribute must define a getter and setter.
@@ -212,25 +244,6 @@ _ATTRIBUTE_SETTERS: Dict[
 }
 
 
-class AttributeWidget(QWidget):
-    def __init__(
-        self, parent: Optional["QWidget"], viewer: "ViewerModel"
-    ) -> None:
-        super().__init__(parent)
-
-    @abstractmethod
-    def update(self, viewer: "ViewerModel", layer: "Layer") -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def connect_layer(self, layer: "Layer") -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def disconnect_layer(self, layer: "Layer") -> None:
-        raise NotImplementedError()
-
-
 class AxisWidget(QWidget):
     def __init__(self, parent: Optional["QWidget"]) -> None:
         super().__init__(parent)
@@ -238,15 +251,15 @@ class AxisWidget(QWidget):
         self.name = QLineEdit()
         self.layout().addWidget(self.name)
         self.type = QComboBox()
-        self.type.addItems([m.name for m in AxisType])
+        self.type.addItems(AxisType.names())
         self.layout().addWidget(self.type)
 
 
-class AxesWidget(AttributeWidget):
+class AxesWidget(QWidget):
     def __init__(
         self, parent: Optional["QWidget"], viewer: "ViewerModel"
     ) -> None:
-        super().__init__(parent, viewer)
+        super().__init__(parent)
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Layer dimensions"))
         layout.setSpacing(2)
@@ -317,6 +330,52 @@ class AxesWidget(AttributeWidget):
         dims.axis_labels = all_labels
 
 
+class AxisTypeUnitsWidget(QWidget):
+    def __init__(
+        self, parent: Optional["QWidget"], name: str, unit_types: List[str]
+    ) -> None:
+        super().__init__(parent)
+        self.setLayout(QHBoxLayout())
+        self.type = QLabel(name)
+        self.layout().addWidget(self.type)
+        self.units = QComboBox()
+        self.units.addItems(unit_types)
+        self.layout().addWidget(self.units)
+
+
+class AxesTypeUnitsWidget(QWidget):
+    def __init__(
+        self, parent: Optional["QWidget"], viewer: "ViewerModel"
+    ) -> None:
+        super().__init__(parent)
+        layout = QVBoxLayout()
+        layout.setSpacing(2)
+        layout.addWidget(QLabel("Dimension units"))
+        self.space = AxisTypeUnitsWidget(
+            self, str(AxisType.SPACE), SpaceUnits.names()
+        )
+        layout.addWidget(self.space)
+        self.time = AxisTypeUnitsWidget(
+            self, str(AxisType.TIME), TimeUnits.names()
+        )
+        layout.addWidget(self.time)
+        self.setLayout(layout)
+        self._viewer = viewer
+        self.space.units.currentTextChanged.connect(
+            self._on_space_units_changed
+        )
+        self._on_space_units_changed()
+        self._viewer.scale_bar.events.unit.connect(
+            self._on_viewer_scale_bar_unit_changed
+        )
+
+    def _on_space_units_changed(self) -> None:
+        self._viewer.scale_bar.unit = self.space.units.currentText()
+
+    def _on_viewer_scale_bar_unit_changed(self, event) -> None:
+        self.space.units.setCurrentText(event.value)
+
+
 class QMetadataWidget(QWidget):
     def __init__(self, napari_viewer: "ViewerModel"):
         super().__init__()
@@ -375,6 +434,9 @@ class QMetadataWidget(QWidget):
 
         self._axes_widget = AxesWidget(self, napari_viewer)
         layout.addWidget(self._axes_widget)
+
+        self._types_widget = AxesTypeUnitsWidget(self, napari_viewer)
+        layout.addWidget(self._types_widget)
 
         self._on_selected_layers_changed()
 
