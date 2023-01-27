@@ -24,29 +24,31 @@ class AxisTypeUnitsWidget(QWidget):
 
 
 class AxesTypeUnitsWidget(QWidget):
-    def __init__(
-        self, parent: Optional["QWidget"], viewer: "ViewerModel"
-    ) -> None:
-        super().__init__(parent)
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("View and edit viewer axis units"))
+    def __init__(self, viewer: "ViewerModel") -> None:
+        super().__init__()
+        self._viewer: "ViewerModel" = viewer
+
         self.space = AxisTypeUnitsWidget(
             self, str(AxisType.SPACE), SpaceUnits.names()
         )
-        layout.addWidget(self.space)
         self.time = AxisTypeUnitsWidget(
             self, str(AxisType.TIME), TimeUnits.names()
         )
+
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("View and edit viewer axis units"))
+        layout.addWidget(self.space)
         layout.addWidget(self.time)
         self.setLayout(layout)
-        self._viewer = viewer
-        self.space.units.currentTextChanged.connect(
-            self._on_space_units_changed
-        )
-        self._on_space_units_changed()
+
         self._viewer.scale_bar.events.unit.connect(
             self._on_viewer_scale_bar_unit_changed
         )
+        self.space.units.currentTextChanged.connect(
+            self._on_space_units_changed
+        )
+
+        self._on_space_units_changed()
 
     def _on_space_units_changed(self) -> None:
         self._viewer.scale_bar.unit = self.space.units.currentText()

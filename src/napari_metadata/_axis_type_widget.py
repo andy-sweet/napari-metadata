@@ -30,19 +30,18 @@ class AxisTypeWidget(QWidget):
 
 
 class AxesTypeWidget(QWidget):
-    def __init__(
-        self, parent: Optional["QWidget"], viewer: "ViewerModel"
-    ) -> None:
-        super().__init__(parent)
+    def __init__(self, viewer: "ViewerModel") -> None:
+        super().__init__()
+        self._viewer: "ViewerModel" = viewer
 
         layout = QVBoxLayout()
         layout.addWidget(QLabel("View and edit viewer axes types"))
         self.setLayout(layout)
 
-        self._viewer: "ViewerModel" = viewer
         self._viewer.dims.events.axis_labels.connect(
             self._on_viewer_dims_axis_labels_changed
         )
+
         self.set_selected_layer(None)
 
     def set_selected_layer(self, layer: Optional["Layer"]) -> None:

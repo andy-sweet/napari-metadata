@@ -171,10 +171,10 @@ class QMetadataWidget(QWidget):
         self._add_attribute_widgets("pixel-size", editable=True)
         self._add_attribute_widgets("pixel-type", editable=False)
 
-        self._axes_widget = AxesTypeWidget(self, napari_viewer)
+        self._axes_widget = AxesTypeWidget(napari_viewer)
         layout.addWidget(self._axes_widget)
 
-        self._types_widget = AxesTypeUnitsWidget(self, napari_viewer)
+        self._types_widget = AxesTypeUnitsWidget(napari_viewer)
         layout.addWidget(self._types_widget)
 
         self._on_selected_layers_changed()

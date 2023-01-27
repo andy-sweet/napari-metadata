@@ -15,6 +15,6 @@ def test_init_with_no_layers(qtbot):
 
 
 def make_axes_type_widget(qtbot, viewer) -> AxesTypeWidget:
-    widget = AxesTypeWidget(None, viewer)
+    widget = AxesTypeWidget(viewer)
     qtbot.addWidget(widget)
     return widget
