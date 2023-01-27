@@ -1,16 +1,19 @@
 import os
+from abc import abstractmethod
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence
 
 import napari_ome_zarr
 import zarr
 from ome_zarr.io import parse_url
 from ome_zarr.writer import write_image
 from qtpy.QtWidgets import (
+    QComboBox,
     QFileDialog,
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QLayoutItem,
     QLineEdit,
     QPushButton,
     QVBoxLayout,
@@ -34,6 +37,42 @@ if TYPE_CHECKING:
 # This design pattern should also be generalizable to more complex edit
 # widgets (i.e. not just line edit widgets), but the input/output value
 # will then be generic instead of all being strings.
+
+
+# How to group axis widgets?
+#
+# - index: not asked for, unsure if useful
+#   - array-axis index
+#   - implied by order
+# - name: always present
+# - type: likely present, not used by napari, written to ome-ngff,
+#   constrains unit choices
+# - unit: needs to present somewhere, but not necessarily per-axis
+#   - could be per-type, or viewer wide
+#   - if it's per type, we could infer viewer-wide/canvas unit
+#     (with a warning if types/units are mixed)
+#   - similar inference possible with per-axis, but maybe less useful?
+# - pixel-size
+#   - consider rename to spacing (maybe scale)
+#   - must be per axis
+#   - don't need to do this yet
+# - offset/translation
+#   - should be treated similarly to pixel-size
+#   - def out of scope for this issue
+
+# let's just focus on name, type, unit
+# then there are two options
+#
+# 1. Row per axis with: name, type.
+#   - Then one extra row in form for each type: type, unit
+#   - This is similar to the design and imagej
+#   - If visualized axes have mixed types, issue warning from plugin
+#
+# 2. Row per axis with: name, type, unit
+#   - If visualized axes have mixed units, issue warning from plugin
+#
+# Decision: go with 1 for now
+#   - if we add pixel size / offset to same row, we can always show that unit
 
 
 def _get_name(layer: "Layer", viewer: "ViewerModel") -> str:
@@ -162,6 +201,84 @@ _ATTRIBUTE_SETTERS: Dict[
 }
 
 
+class AttributeWidget(QWidget):
+    def __init__(
+        self, parent: Optional["QWidget"], viewer: "ViewerModel"
+    ) -> None:
+        super().__init__(parent)
+
+    @abstractmethod
+    def update(self, viewer: "ViewerModel", layer: "Layer") -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def connect_layer(self, layer: "Layer") -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def disconnect_layer(self, layer: "Layer") -> None:
+        raise NotImplementedError()
+
+
+class AxisWidget(QWidget):
+    def __init__(self, parent: Optional["QWidget"]) -> None:
+        super().__init__(parent)
+        self.setLayout(QHBoxLayout())
+        self.name = QLineEdit()
+        self.layout().addWidget(self.name)
+        self.type = QComboBox()
+        self.layout().addWidget(self.type)
+
+
+class AxesWidget(AttributeWidget):
+    def __init__(
+        self, parent: Optional["QWidget"], viewer: "ViewerModel"
+    ) -> None:
+        super().__init__(parent, viewer)
+        self.setLayout(QVBoxLayout())
+        # Need to reconsider if we want to support multiple viewers.
+        viewer.dims.events.axis_labels.connect(
+            self._on_viewer_dims_axis_labels_changed
+        )
+
+    def update(self, viewer: "ViewerModel", layer: "Layer") -> None:
+        self._update_num_axes(layer.ndim)
+        self._set_axis_names(viewer.dims.axis_labels)
+
+    def connect_layer(self, layer: "Layer") -> None:
+        pass
+
+    def disconnect_layer(self, layer: "Layer") -> None:
+        pass
+
+    def _update_num_axes(self, num_axes: int) -> None:
+        num_widgets: int = self.layout().count()
+        # Add any missing widgets.
+        for _ in range(num_axes - num_widgets):
+            self.layout().addWidget(AxisWidget(self))
+        # Remove any unneeded widgets.
+        for i in range(num_widgets - num_axes):
+            item: QLayoutItem = self.layout().takeAt(num_widgets - i)
+            # Need to unparent? Instead of deleting?
+            item.widget().deleteLater()
+
+    def _on_viewer_dims_axis_labels_changed(self, event) -> None:
+        self._set_axis_names(event.value)
+
+    def _set_axis_names(self, names: List[str]) -> None:
+        widgets = self._widgets()
+        assert len(names) == len(widgets)
+        for name, widget in zip(names, widgets):
+            widget.name.setText(name)
+
+    def _widgets(self) -> List[AxisWidget]:
+        # Implied cast from QLayoutItem to AxisWidget
+        return [
+            self.layout().itemAt(i).widget()
+            for i in range(self.layout().count())
+        ]
+
+
 class QMetadataWidget(QWidget):
     def __init__(self, napari_viewer: "ViewerModel"):
         super().__init__()
@@ -218,6 +335,9 @@ class QMetadataWidget(QWidget):
         self._add_attribute_widgets("pixel-size-unit", editable=True)
         self._add_attribute_widgets("pixel-type", editable=False)
 
+        self._axes_widget = AxesWidget(self, napari_viewer)
+        layout.addWidget(self._axes_widget)
+
         self._on_selected_layers_changed()
 
     def _add_attribute_widgets(self, name: str, *, editable: bool) -> None:
@@ -260,6 +380,9 @@ class QMetadataWidget(QWidget):
             layer.events.scale.connect(self._on_selected_layer_scale_changed)
             for name in self._value_edits:
                 self._update_attribute(layer, name)
+
+            self._axes_widget.update(self.viewer, layer)
+
             self._attribute_widget.show()
         else:
             self._attribute_widget.hide()
