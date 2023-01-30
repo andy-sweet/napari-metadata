@@ -3,6 +3,7 @@ from typing import List
 
 
 class TimeUnits(Enum):
+    NONE = auto()
     NANOSECONDS = auto()
     MICROSECONDS = auto()
     MILLISECONDS = auto()
