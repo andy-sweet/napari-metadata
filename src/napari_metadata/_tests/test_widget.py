@@ -182,6 +182,26 @@ def test_changing_viewer_scale_bar_unit_to_none_changes_space_unit(qtbot):
     assert space_units_widget.currentText() == "none"
 
 
+def test_changing_viewer_scale_bar_unit_to_unknown_changes_space_unit(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    viewer.scale_bar.unit = "millimeters"
+    space_units_widget = widget._types_widget.space.units
+    assert space_units_widget.currentText() != "none"
+
+    # Supported by pint/napari, but not supported by our widget.
+    viewer.scale_bar.unit = "furlongs"
+
+    assert space_units_widget.currentText() == "none"
+    # TODO: decide if this should pass.
+    # assert viewer.scale_bar.unit == "furlongs"
+
+
+# TODO: handle aliases/abbreviations recognized by pint
+
+
 def axis_names(widget: QMetadataWidget) -> Tuple[str]:
     return tuple(widget._axes_widget.axis_names())
 

@@ -58,4 +58,8 @@ class AxesTypeUnitsWidget(QWidget):
     def _on_viewer_scale_bar_unit_changed(self, event) -> None:
         unit = event.value
         text = "none" if unit is None else unit
-        self.space.units.setCurrentText(text)
+        index = self.space.units.findText(text)
+        # The napari model API allows more units than we allow for spatial
+        # axes, so set to none if not recognized.
+        current_index = 0 if index == -1 else index
+        self.space.units.setCurrentIndex(current_index)
