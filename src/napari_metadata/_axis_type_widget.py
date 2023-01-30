@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, List, Optional
 from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
-    QLabel,
     QLayoutItem,
     QLineEdit,
     QVBoxLayout,
@@ -24,9 +23,11 @@ class AxisTypeWidget(QWidget):
         self.type = QComboBox()
         self.type.addItems(AxisType.names())
 
-        self.setLayout(QHBoxLayout())
-        self.layout().addWidget(self.name)
-        self.layout().addWidget(self.type)
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.name)
+        layout.addWidget(self.type)
+        self.setLayout(layout)
 
 
 class AxesTypeWidget(QWidget):
@@ -35,7 +36,6 @@ class AxesTypeWidget(QWidget):
         self._viewer: "ViewerModel" = viewer
 
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("View and edit viewer axes types"))
         self.setLayout(layout)
 
         self._viewer.dims.events.axis_labels.connect(
@@ -54,16 +54,14 @@ class AxesTypeWidget(QWidget):
                 widget.setEnabled(i >= ndim_diff)
 
     def _update_num_axes(self, num_axes: int) -> None:
-        num_widgets: int = self.layout().count() - 1
+        num_widgets: int = self.layout().count()
         # Add any missing widgets.
         for _ in range(num_axes - num_widgets):
             widget = self._make_axis_widget()
             self.layout().addWidget(widget)
         # Remove any unneeded widgets.
         for i in range(num_widgets - num_axes):
-            # +1 because first widget is label
-            # TODO: better solution needed!
-            item: QLayoutItem = self.layout().takeAt(num_widgets - i + 1)
+            item: QLayoutItem = self.layout().takeAt(i)
             # Need to unparent? Instead of deleting?
             item.widget().deleteLater()
 
@@ -85,7 +83,7 @@ class AxesTypeWidget(QWidget):
         # Implied cast from QLayoutItem to AxisWidget
         return [
             self.layout().itemAt(i).widget()
-            for i in range(1, self.layout().count())
+            for i in range(0, self.layout().count())
         ]
 
     def axis_names(self) -> List[str]:

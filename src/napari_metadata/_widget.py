@@ -172,9 +172,11 @@ class QMetadataWidget(QWidget):
         self._add_attribute_widgets("pixel-type", editable=False)
 
         self._axes_widget = AxesTypeWidget(napari_viewer)
+        layout.addWidget(QLabel("View and edit viewer axes types"))
         layout.addWidget(self._axes_widget)
 
         self._types_widget = AxesTypeUnitsWidget(napari_viewer)
+        layout.addWidget(QLabel("View and edit viewer axis units"))
         layout.addWidget(self._types_widget)
 
         self._on_selected_layers_changed()

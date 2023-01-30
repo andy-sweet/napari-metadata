@@ -16,12 +16,15 @@ class AxisTypeUnitsWidget(QWidget):
         self, parent: Optional["QWidget"], name: str, unit_types: List[str]
     ) -> None:
         super().__init__(parent)
-        self.setLayout(QHBoxLayout())
         self.type = QLabel(name)
-        self.layout().addWidget(self.type)
         self.units = QComboBox()
         self.units.addItems(unit_types)
-        self.layout().addWidget(self.units)
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.type)
+        layout.addWidget(self.units)
+        self.setLayout(layout)
 
 
 class AxesTypeUnitsWidget(QWidget):
@@ -47,7 +50,6 @@ class AxesTypeUnitsWidget(QWidget):
         )
 
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("View and edit viewer axis units"))
         layout.addWidget(self.space)
         layout.addWidget(self.time)
         self.setLayout(layout)
