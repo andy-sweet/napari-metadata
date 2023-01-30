@@ -3,6 +3,7 @@ from typing import List
 
 
 class SpaceUnits(Enum):
+    NONE = auto()
     NANOMETERS = auto()
     MICROMETERS = auto()
     MILLIMETERS = auto()

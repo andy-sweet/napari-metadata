@@ -51,7 +51,11 @@ class AxesTypeUnitsWidget(QWidget):
         self._on_space_units_changed()
 
     def _on_space_units_changed(self) -> None:
-        self._viewer.scale_bar.unit = self.space.units.currentText()
+        text = self.space.units.currentText()
+        unit = None if text == "none" else text
+        self._viewer.scale_bar.unit = unit
 
     def _on_viewer_scale_bar_unit_changed(self, event) -> None:
-        self.space.units.setCurrentText(event.value)
+        unit = event.value
+        text = "none" if unit is None else unit
+        self.space.units.setCurrentText(text)

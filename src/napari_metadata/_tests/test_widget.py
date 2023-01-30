@@ -168,6 +168,20 @@ def test_changing_viewer_scale_bar_unit_changes_space_unit(qtbot):
     assert space_units_widget.currentText() == new_unit
 
 
+def test_changing_viewer_scale_bar_unit_to_none_changes_space_unit(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    space_units_widget = widget._types_widget.space.units
+    viewer.scale_bar.unit = "millimeters"
+    assert space_units_widget.currentText() != "none"
+
+    viewer.scale_bar.unit = None
+
+    assert space_units_widget.currentText() == "none"
+
+
 def axis_names(widget: QMetadataWidget) -> Tuple[str]:
     return tuple(widget._axes_widget.axis_names())
 
