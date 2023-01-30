@@ -122,6 +122,34 @@ def test_add_3d_image_to_2d_image(qtbot):
     assert are_axis_widgets_enabled(widget) == (True, True, True)
 
 
+def test_remove_only_2d_image(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    assert are_axis_widgets_enabled(widget) == (True, True)
+
+    viewer.layers.pop()
+
+    assert viewer.layers.selection == set()
+    assert axis_names(widget) == ("0", "1")
+    assert are_axis_widgets_enabled(widget) == (True, True)
+
+
+def test_remove_only_3d_image(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3, 2)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    assert are_axis_widgets_enabled(widget) == (True, True, True)
+
+    viewer.layers.pop()
+
+    assert viewer.layers.selection == set()
+    assert axis_names(widget) == ("1", "2")
+    assert are_axis_widgets_enabled(widget) == (True, True)
+
+
 def test_set_axis_name(qtbot):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     first_axis_widget = widget._axes_widget.axis_widgets()[0]

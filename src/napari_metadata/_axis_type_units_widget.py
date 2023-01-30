@@ -34,7 +34,6 @@ class AxesTypeUnitsWidget(QWidget):
         self._unit_registry: UnitRegistry = UnitRegistry()
         self._PINT_TO_SPACE_UNIT = {
             self._unit_registry.nanometer: SpaceUnits.NANOMETERS,
-            # TODO: normalize pint unit to avoid both micron and micrometer.
             self._unit_registry.micron: SpaceUnits.MICROMETERS,
             self._unit_registry.micrometer: SpaceUnits.MICROMETERS,
             self._unit_registry.millimeter: SpaceUnits.MILLIMETERS,

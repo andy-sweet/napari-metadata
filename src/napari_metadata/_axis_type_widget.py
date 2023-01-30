@@ -61,8 +61,8 @@ class AxesTypeWidget(QWidget):
             self.layout().addWidget(widget)
         # Remove any unneeded widgets.
         for i in range(num_widgets - num_axes):
-            item: QLayoutItem = self.layout().takeAt(i)
-            # Need to unparent? Instead of deleting?
+            item: QLayoutItem = self.layout().takeAt(num_widgets - (i + 1))
+            # TODO: Need to unparent? Instead of deleting?
             item.widget().deleteLater()
 
     def _make_axis_widget(self) -> None:

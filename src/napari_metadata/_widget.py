@@ -221,12 +221,11 @@ class QMetadataWidget(QWidget):
             layer.events.scale.connect(self._on_selected_layer_scale_changed)
             for name in self._value_edits:
                 self._update_attribute(layer, name)
-
-            self._axes_widget.set_selected_layer(layer)
-
             self._attribute_widget.show()
         else:
             self._attribute_widget.hide()
+
+        self._axes_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
 
