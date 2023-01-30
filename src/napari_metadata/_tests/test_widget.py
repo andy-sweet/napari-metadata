@@ -119,7 +119,7 @@ def test_add_3d_image_to_2d_image(qtbot):
     assert are_axis_widgets_enabled(widget) == (True, True, True)
 
 
-def test_changing_axis_name_changes_viewer_axis_label(qtbot):
+def test_set_axis_name(qtbot):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -134,7 +134,7 @@ def test_changing_axis_name_changes_viewer_axis_label(qtbot):
     assert viewer.dims.axis_labels[0] == new_name
 
 
-def test_changing_viewer_axis_label_changes_axis_name(qtbot):
+def test_set_viewer_axis_label(qtbot):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -149,7 +149,7 @@ def test_changing_viewer_axis_label_changes_axis_name(qtbot):
     assert first_axis_widget.name.text() == new_name
 
 
-def test_changing_space_unit_changes_viewer_scale_bar_unit(qtbot):
+def test_set_space_unit(qtbot):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -164,7 +164,7 @@ def test_changing_space_unit_changes_viewer_scale_bar_unit(qtbot):
     assert viewer.scale_bar.unit == new_unit
 
 
-def test_changing_viewer_scale_bar_unit_changes_space_unit(qtbot):
+def test_set_viewer_scale_bar_unit(qtbot):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -179,7 +179,7 @@ def test_changing_viewer_scale_bar_unit_changes_space_unit(qtbot):
     assert space_units_widget.currentText() == new_unit
 
 
-def test_changing_viewer_scale_bar_unit_to_none_changes_space_unit(qtbot):
+def test_set_viewer_scale_bar_unit_to_none(qtbot):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -193,7 +193,7 @@ def test_changing_viewer_scale_bar_unit_to_none_changes_space_unit(qtbot):
     assert space_units_widget.currentText() == "none"
 
 
-def test_changing_viewer_scale_bar_unit_to_unknown_changes_space_unit(qtbot):
+def test_set_viewer_scale_bar_unit_to_unknown(qtbot):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -210,7 +210,7 @@ def test_changing_viewer_scale_bar_unit_to_unknown_changes_space_unit(qtbot):
     # assert viewer.scale_bar.unit == "furlongs"
 
 
-def test_changing_viewer_scale_bar_unit_to_abbreviation(qtbot):
+def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
