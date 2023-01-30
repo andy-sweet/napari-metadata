@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pytestqt.qtbot import QtBot
 
 
-def test_init_with_no_layers(qtbot):
+def test_init_with_no_layers(qtbot: "QtBot"):
     viewer = ViewerModel()
     assert viewer.layers.selection == set()
 
@@ -20,7 +20,7 @@ def test_init_with_no_layers(qtbot):
     assert are_axis_widgets_enabled(widget) == (True, True)
 
 
-def test_init_with_one_selected_2d_image(qtbot):
+def test_init_with_one_selected_2d_image(qtbot: "QtBot"):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -31,7 +31,7 @@ def test_init_with_one_selected_2d_image(qtbot):
     assert are_axis_widgets_enabled(widget) == (True, True)
 
 
-def test_init_with_one_selected_2d_rgb_image(qtbot):
+def test_init_with_one_selected_2d_rgb_image(qtbot: "QtBot"):
     viewer = ViewerModel()
     viewer.add_image(np.empty((5, 4, 3)), rgb=True)
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -43,7 +43,7 @@ def test_init_with_one_selected_2d_rgb_image(qtbot):
 
 
 def test_init_with_one_unselected_2d_image_and_one_selected_3d_image(
-    qtbot,
+    qtbot: "QtBot",
 ):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
@@ -57,7 +57,7 @@ def test_init_with_one_unselected_2d_image_and_one_selected_3d_image(
 
 
 def test_init_with_one_selected_2d_image_and_one_unselected_3d_image(
-    qtbot,
+    qtbot: "QtBot",
 ):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3, 2)))
@@ -70,7 +70,7 @@ def test_init_with_one_selected_2d_image_and_one_unselected_3d_image(
     assert are_axis_widgets_enabled(widget) == (False, True, True)
 
 
-def test_selected_layer_from_2d_to_3d(qtbot):
+def test_selected_layer_from_2d_to_3d(qtbot: "QtBot"):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3, 2)))
     viewer.add_image(np.empty((4, 3)))
@@ -83,7 +83,7 @@ def test_selected_layer_from_2d_to_3d(qtbot):
     assert are_axis_widgets_enabled(widget) == (True, True, True)
 
 
-def test_selected_layer_from_3d_to_2d(qtbot):
+def test_selected_layer_from_3d_to_2d(qtbot: "QtBot"):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     viewer.add_image(np.empty((4, 3, 2)))
@@ -96,7 +96,7 @@ def test_selected_layer_from_3d_to_2d(qtbot):
     assert are_axis_widgets_enabled(widget) == (False, True, True)
 
 
-def test_add_2d_image_to_3d_image(qtbot):
+def test_add_2d_image_to_3d_image(qtbot: "QtBot"):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3, 2)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -109,7 +109,7 @@ def test_add_2d_image_to_3d_image(qtbot):
     assert are_axis_widgets_enabled(widget) == (False, True, True)
 
 
-def test_add_3d_image_to_2d_image(qtbot):
+def test_add_3d_image_to_2d_image(qtbot: "QtBot"):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -122,7 +122,7 @@ def test_add_3d_image_to_2d_image(qtbot):
     assert are_axis_widgets_enabled(widget) == (True, True, True)
 
 
-def test_remove_only_2d_image(qtbot):
+def test_remove_only_2d_image(qtbot: "QtBot"):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -136,7 +136,7 @@ def test_remove_only_2d_image(qtbot):
     assert are_axis_widgets_enabled(widget) == (True, True)
 
 
-def test_remove_only_3d_image(qtbot):
+def test_remove_only_3d_image(qtbot: "QtBot"):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3, 2)))
     assert viewer.layers.selection == {viewer.layers[0]}
@@ -150,7 +150,7 @@ def test_remove_only_3d_image(qtbot):
     assert are_axis_widgets_enabled(widget) == (True, True)
 
 
-def test_set_axis_name(qtbot):
+def test_set_axis_name(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     first_axis_widget = widget._axes_widget.axis_widgets()[0]
     new_name = "y"
@@ -162,7 +162,7 @@ def test_set_axis_name(qtbot):
     assert viewer.dims.axis_labels[0] == new_name
 
 
-def test_set_viewer_axis_label(qtbot):
+def test_set_viewer_axis_label(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     first_axis_widget = widget._axes_widget.axis_widgets()[0]
     new_name = "y"
@@ -174,7 +174,7 @@ def test_set_viewer_axis_label(qtbot):
     assert first_axis_widget.name.text() == new_name
 
 
-def test_set_space_unit(qtbot):
+def test_set_space_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._types_widget.space.units
     new_unit = "millimeters"
@@ -186,7 +186,7 @@ def test_set_space_unit(qtbot):
     assert viewer.scale_bar.unit == new_unit
 
 
-def test_set_viewer_scale_bar_unit(qtbot):
+def test_set_viewer_scale_bar_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._types_widget.space.units
     new_unit = "millimeters"
@@ -198,7 +198,7 @@ def test_set_viewer_scale_bar_unit(qtbot):
     assert space_units_widget.currentText() == new_unit
 
 
-def test_set_viewer_scale_bar_unit_to_none(qtbot):
+def test_set_viewer_scale_bar_unit_to_none(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._types_widget.space.units
     viewer.scale_bar.unit = "millimeters"
@@ -209,7 +209,7 @@ def test_set_viewer_scale_bar_unit_to_none(qtbot):
     assert space_units_widget.currentText() == "none"
 
 
-def test_set_viewer_scale_bar_unit_to_unknown(qtbot):
+def test_set_viewer_scale_bar_unit_to_unknown(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     viewer.scale_bar.unit = "millimeters"
     space_units_widget = widget._types_widget.space.units
@@ -221,7 +221,7 @@ def test_set_viewer_scale_bar_unit_to_unknown(qtbot):
     assert space_units_widget.currentText() == "none"
 
 
-def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot):
+def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._types_widget.space.units
     assert viewer.scale_bar.unit != "mm"
