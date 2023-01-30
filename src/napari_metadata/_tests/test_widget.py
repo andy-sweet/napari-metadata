@@ -123,6 +123,21 @@ def test_changing_axis_name_changes_viewer_axis_label(qtbot):
     assert viewer.dims.axis_labels[0] == new_name
 
 
+def test_changing_viewer_axis_label_changes_axis_name(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    first_axis_widget = widget._axes_widget.axis_widgets()[0]
+    new_name = "y"
+    assert viewer.dims.axis_labels[0] != new_name
+    assert first_axis_widget.name.text() != new_name
+
+    viewer.dims.axis_labels = [new_name, viewer.dims.axis_labels[1]]
+
+    assert first_axis_widget.name.text() == new_name
+
+
 def test_changing_space_unit_changes_viewer_scale_bar_unit(qtbot):
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
