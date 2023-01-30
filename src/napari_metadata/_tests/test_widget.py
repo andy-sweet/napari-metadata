@@ -1,10 +1,13 @@
-from typing import Tuple
+from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
 from napari.components import ViewerModel
 from qtpy.QtWidgets import QWidget
 
 from napari_metadata import QMetadataWidget
+
+if TYPE_CHECKING:
+    from pytestqt.qtbot import QtBot
 
 
 def test_init_with_no_layers(qtbot):
@@ -120,10 +123,7 @@ def test_add_3d_image_to_2d_image(qtbot):
 
 
 def test_set_axis_name(qtbot):
-    viewer = ViewerModel()
-    viewer.add_image(np.empty((4, 3)))
-    assert viewer.layers.selection == {viewer.layers[0]}
-    widget = make_metadata_widget(qtbot, viewer)
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     first_axis_widget = widget._axes_widget.axis_widgets()[0]
     new_name = "y"
     assert first_axis_widget.name.text() != new_name
@@ -135,10 +135,7 @@ def test_set_axis_name(qtbot):
 
 
 def test_set_viewer_axis_label(qtbot):
-    viewer = ViewerModel()
-    viewer.add_image(np.empty((4, 3)))
-    assert viewer.layers.selection == {viewer.layers[0]}
-    widget = make_metadata_widget(qtbot, viewer)
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     first_axis_widget = widget._axes_widget.axis_widgets()[0]
     new_name = "y"
     assert viewer.dims.axis_labels[0] != new_name
@@ -150,10 +147,7 @@ def test_set_viewer_axis_label(qtbot):
 
 
 def test_set_space_unit(qtbot):
-    viewer = ViewerModel()
-    viewer.add_image(np.empty((4, 3)))
-    assert viewer.layers.selection == {viewer.layers[0]}
-    widget = make_metadata_widget(qtbot, viewer)
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._types_widget.space.units
     new_unit = "millimeters"
     assert space_units_widget.currentText() != new_unit
@@ -165,10 +159,7 @@ def test_set_space_unit(qtbot):
 
 
 def test_set_viewer_scale_bar_unit(qtbot):
-    viewer = ViewerModel()
-    viewer.add_image(np.empty((4, 3)))
-    assert viewer.layers.selection == {viewer.layers[0]}
-    widget = make_metadata_widget(qtbot, viewer)
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._types_widget.space.units
     new_unit = "millimeters"
     assert viewer.scale_bar.unit != new_unit
@@ -180,10 +171,7 @@ def test_set_viewer_scale_bar_unit(qtbot):
 
 
 def test_set_viewer_scale_bar_unit_to_none(qtbot):
-    viewer = ViewerModel()
-    viewer.add_image(np.empty((4, 3)))
-    assert viewer.layers.selection == {viewer.layers[0]}
-    widget = make_metadata_widget(qtbot, viewer)
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._types_widget.space.units
     viewer.scale_bar.unit = "millimeters"
     assert space_units_widget.currentText() != "none"
@@ -194,10 +182,7 @@ def test_set_viewer_scale_bar_unit_to_none(qtbot):
 
 
 def test_set_viewer_scale_bar_unit_to_unknown(qtbot):
-    viewer = ViewerModel()
-    viewer.add_image(np.empty((4, 3)))
-    assert viewer.layers.selection == {viewer.layers[0]}
-    widget = make_metadata_widget(qtbot, viewer)
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     viewer.scale_bar.unit = "millimeters"
     space_units_widget = widget._types_widget.space.units
     assert space_units_widget.currentText() != "none"
@@ -206,15 +191,10 @@ def test_set_viewer_scale_bar_unit_to_unknown(qtbot):
     viewer.scale_bar.unit = "furlongs"
 
     assert space_units_widget.currentText() == "none"
-    # TODO: decide if this should pass.
-    # assert viewer.scale_bar.unit == "furlongs"
 
 
 def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot):
-    viewer = ViewerModel()
-    viewer.add_image(np.empty((4, 3)))
-    assert viewer.layers.selection == {viewer.layers[0]}
-    widget = make_metadata_widget(qtbot, viewer)
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._types_widget.space.units
     assert viewer.scale_bar.unit != "mm"
     assert space_units_widget.currentText() != "millimeters"
@@ -233,7 +213,19 @@ def are_axis_widgets_enabled(widget: QMetadataWidget) -> Tuple[bool]:
     return tuple(map(QWidget.isEnabled, axes_widget.axis_widgets()))
 
 
-def make_metadata_widget(qtbot, viewer) -> QMetadataWidget:
+def make_metadata_widget(
+    qtbot: "QtBot", viewer: ViewerModel
+) -> QMetadataWidget:
     widget = QMetadataWidget(viewer)
     qtbot.addWidget(widget)
     return widget
+
+
+def make_viewer_with_one_image_and_widget(
+    qtbot: "QtBot",
+) -> Tuple[ViewerModel, QMetadataWidget]:
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    return viewer, widget
