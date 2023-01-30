@@ -108,6 +108,36 @@ def test_add_3d_image_to_2d_image(qtbot):
     assert are_axis_widgets_enabled(widget) == (True, True, True)
 
 
+def test_changing_axis_name_changes_viewer_axis_label(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    first_axis_widget = widget._axes_widget.axis_widgets()[0]
+    new_name = "y"
+    assert first_axis_widget.name.text() != new_name
+    assert viewer.dims.axis_labels[0] != new_name
+
+    first_axis_widget.name.setText(new_name)
+
+    assert viewer.dims.axis_labels[0] == new_name
+
+
+def test_changing_space_unit_changes_viewer_scale_bar_unit(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    space_units_widget = widget._types_widget.space.units
+    new_unit = "millimeters"
+    space_units_widget.currentText() != new_unit
+    assert viewer.scale_bar.unit != new_unit
+
+    space_units_widget.setCurrentText(new_unit)
+
+    assert viewer.scale_bar.unit == new_unit
+
+
 def axis_names(widget: QMetadataWidget) -> Tuple[str]:
     return tuple(widget._axes_widget.axis_names())
 
