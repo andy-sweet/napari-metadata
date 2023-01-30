@@ -17,8 +17,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari_metadata._axis_type_units_widget import AxesTypeUnitsWidget
-from napari_metadata._axis_type_widget import AxesTypeWidget
+from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
+from napari_metadata._axes_type_units_widget import AxesTypeUnitsWidget
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -171,7 +171,7 @@ class QMetadataWidget(QWidget):
         self._add_attribute_widgets("pixel-size", editable=True)
         self._add_attribute_widgets("pixel-type", editable=False)
 
-        self._axes_widget = AxesTypeWidget(napari_viewer)
+        self._axes_widget = AxesNameTypeWidget(napari_viewer)
         layout.addWidget(QLabel("View and edit viewer axes types"))
         layout.addWidget(self._axes_widget)
 

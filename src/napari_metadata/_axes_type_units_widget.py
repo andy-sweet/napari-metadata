@@ -1,6 +1,6 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
-from pint import UnitRegistry
+from pint import Unit, UnitRegistry
 from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from napari_metadata._axis_type import AxisType
@@ -32,7 +32,7 @@ class AxesTypeUnitsWidget(QWidget):
         super().__init__()
         self._viewer: "ViewerModel" = viewer
         self._unit_registry: UnitRegistry = UnitRegistry()
-        self._PINT_TO_SPACE_UNIT = {
+        self._PINT_TO_SPACE_UNIT: Dict[Unit:SpaceUnits] = {
             self._unit_registry.nanometer: SpaceUnits.NANOMETERS,
             self._unit_registry.micron: SpaceUnits.MICROMETERS,
             self._unit_registry.micrometer: SpaceUnits.MICROMETERS,
