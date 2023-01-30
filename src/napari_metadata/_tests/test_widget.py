@@ -28,6 +28,17 @@ def test_init_with_one_selected_2d_image(qtbot):
     assert are_axis_widgets_enabled(widget) == (True, True)
 
 
+def test_init_with_one_selected_2d_rgb_image(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((5, 4, 3)), rgb=True)
+    assert viewer.layers.selection == {viewer.layers[0]}
+
+    widget = make_metadata_widget(qtbot, viewer)
+
+    assert axis_names(widget) == ("0", "1")
+    assert are_axis_widgets_enabled(widget) == (True, True)
+
+
 def test_init_with_one_unselected_2d_image_and_one_selected_3d_image(
     qtbot,
 ):
