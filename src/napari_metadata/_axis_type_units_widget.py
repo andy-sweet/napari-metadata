@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, List, Optional
 
+from pint import UnitRegistry
 from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from napari_metadata._axis_type import AxisType
@@ -27,6 +28,16 @@ class AxesTypeUnitsWidget(QWidget):
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer
+        self._unit_registry: UnitRegistry = UnitRegistry()
+        self._PINT_TO_SPACE_UNIT = {
+            self._unit_registry.nanometer: SpaceUnits.NANOMETERS,
+            # TODO: normalize pint unit to avoid both micron and micrometer.
+            self._unit_registry.micron: SpaceUnits.MICROMETERS,
+            self._unit_registry.micrometer: SpaceUnits.MICROMETERS,
+            self._unit_registry.millimeter: SpaceUnits.MILLIMETERS,
+            self._unit_registry.centimeter: SpaceUnits.CENTIMETERS,
+            self._unit_registry.meter: SpaceUnits.METERS,
+        }
 
         self.space = AxisTypeUnitsWidget(
             self, str(AxisType.SPACE), SpaceUnits.names()
@@ -57,9 +68,9 @@ class AxesTypeUnitsWidget(QWidget):
 
     def _on_viewer_scale_bar_unit_changed(self, event) -> None:
         unit = event.value
-        text = "none" if unit is None else unit
-        index = self.space.units.findText(text)
-        # The napari model API allows more units than we allow for spatial
-        # axes, so set to none if not recognized.
-        current_index = 0 if index == -1 else index
-        self.space.units.setCurrentIndex(current_index)
+        text = "none" if unit is None else self._convert_model_unit(unit)
+        self.space.units.setCurrentText(text)
+
+    def _convert_model_unit(self, unit_name: str) -> Optional[str]:
+        unit = self._unit_registry(unit_name).units
+        return str(self._PINT_TO_SPACE_UNIT.get(unit)).lower()

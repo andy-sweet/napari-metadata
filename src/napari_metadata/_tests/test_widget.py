@@ -199,7 +199,18 @@ def test_changing_viewer_scale_bar_unit_to_unknown_changes_space_unit(qtbot):
     # assert viewer.scale_bar.unit == "furlongs"
 
 
-# TODO: handle aliases/abbreviations recognized by pint
+def test_changing_viewer_scale_bar_unit_to_abbreviation(qtbot):
+    viewer = ViewerModel()
+    viewer.add_image(np.empty((4, 3)))
+    assert viewer.layers.selection == {viewer.layers[0]}
+    widget = make_metadata_widget(qtbot, viewer)
+    space_units_widget = widget._types_widget.space.units
+    assert viewer.scale_bar.unit != "mm"
+    assert space_units_widget.currentText() != "millimeters"
+
+    viewer.scale_bar.unit = "mm"
+
+    assert space_units_widget.currentText() == "millimeters"
 
 
 def axis_names(widget: QMetadataWidget) -> Tuple[str]:
