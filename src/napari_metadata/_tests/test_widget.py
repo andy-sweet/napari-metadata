@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
 from napari.components import ViewerModel
-from qtpy.QtWidgets import QWidget
 
 from napari_metadata import QMetadataWidget
 
@@ -17,7 +16,7 @@ def test_init_with_no_layers(qtbot: "QtBot"):
     widget = make_metadata_widget(qtbot, viewer)
 
     assert axis_names(widget) == ("0", "1")
-    assert are_axis_widgets_enabled(widget) == (True, True)
+    assert are_axis_widgets_visible(widget) == (True, True)
 
 
 def test_init_with_one_selected_2d_image(qtbot: "QtBot"):
@@ -28,7 +27,7 @@ def test_init_with_one_selected_2d_image(qtbot: "QtBot"):
     widget = make_metadata_widget(qtbot, viewer)
 
     assert axis_names(widget) == ("0", "1")
-    assert are_axis_widgets_enabled(widget) == (True, True)
+    assert are_axis_widgets_visible(widget) == (True, True)
 
 
 def test_init_with_one_selected_2d_rgb_image(qtbot: "QtBot"):
@@ -39,7 +38,7 @@ def test_init_with_one_selected_2d_rgb_image(qtbot: "QtBot"):
     widget = make_metadata_widget(qtbot, viewer)
 
     assert axis_names(widget) == ("0", "1")
-    assert are_axis_widgets_enabled(widget) == (True, True)
+    assert are_axis_widgets_visible(widget) == (True, True)
 
 
 def test_init_with_one_unselected_2d_image_and_one_selected_3d_image(
@@ -53,7 +52,7 @@ def test_init_with_one_unselected_2d_image_and_one_selected_3d_image(
     widget = make_metadata_widget(qtbot, viewer)
 
     assert axis_names(widget) == ("0", "1", "2")
-    assert are_axis_widgets_enabled(widget) == (True, True, True)
+    assert are_axis_widgets_visible(widget) == (True, True, True)
 
 
 def test_init_with_one_selected_2d_image_and_one_unselected_3d_image(
@@ -67,7 +66,7 @@ def test_init_with_one_selected_2d_image_and_one_unselected_3d_image(
     widget = make_metadata_widget(qtbot, viewer)
 
     assert axis_names(widget) == ("0", "1", "2")
-    assert are_axis_widgets_enabled(widget) == (False, True, True)
+    assert are_axis_widgets_visible(widget) == (False, True, True)
 
 
 def test_selected_layer_from_2d_to_3d(qtbot: "QtBot"):
@@ -76,11 +75,11 @@ def test_selected_layer_from_2d_to_3d(qtbot: "QtBot"):
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[1]}
     widget = make_metadata_widget(qtbot, viewer)
-    assert are_axis_widgets_enabled(widget) == (False, True, True)
+    assert are_axis_widgets_visible(widget) == (False, True, True)
 
     viewer.layers.selection = {viewer.layers[0]}
 
-    assert are_axis_widgets_enabled(widget) == (True, True, True)
+    assert are_axis_widgets_visible(widget) == (True, True, True)
 
 
 def test_selected_layer_from_3d_to_2d(qtbot: "QtBot"):
@@ -89,11 +88,11 @@ def test_selected_layer_from_3d_to_2d(qtbot: "QtBot"):
     viewer.add_image(np.empty((4, 3, 2)))
     assert viewer.layers.selection == {viewer.layers[1]}
     widget = make_metadata_widget(qtbot, viewer)
-    assert are_axis_widgets_enabled(widget) == (True, True, True)
+    assert are_axis_widgets_visible(widget) == (True, True, True)
 
     viewer.layers.selection = {viewer.layers[0]}
 
-    assert are_axis_widgets_enabled(widget) == (False, True, True)
+    assert are_axis_widgets_visible(widget) == (False, True, True)
 
 
 def test_add_2d_image_to_3d_image(qtbot: "QtBot"):
@@ -101,12 +100,12 @@ def test_add_2d_image_to_3d_image(qtbot: "QtBot"):
     viewer.add_image(np.empty((4, 3, 2)))
     assert viewer.layers.selection == {viewer.layers[0]}
     widget = make_metadata_widget(qtbot, viewer)
-    assert are_axis_widgets_enabled(widget) == (True, True, True)
+    assert are_axis_widgets_visible(widget) == (True, True, True)
 
     viewer.add_image(np.empty((4, 3)))
 
     assert viewer.layers.selection == {viewer.layers[1]}
-    assert are_axis_widgets_enabled(widget) == (False, True, True)
+    assert are_axis_widgets_visible(widget) == (False, True, True)
 
 
 def test_add_3d_image_to_2d_image(qtbot: "QtBot"):
@@ -114,12 +113,12 @@ def test_add_3d_image_to_2d_image(qtbot: "QtBot"):
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
     widget = make_metadata_widget(qtbot, viewer)
-    assert are_axis_widgets_enabled(widget) == (True, True)
+    assert are_axis_widgets_visible(widget) == (True, True)
 
     viewer.add_image(np.empty((4, 3, 2)))
 
     assert viewer.layers.selection == {viewer.layers[1]}
-    assert are_axis_widgets_enabled(widget) == (True, True, True)
+    assert are_axis_widgets_visible(widget) == (True, True, True)
 
 
 def test_remove_only_2d_image(qtbot: "QtBot"):
@@ -127,13 +126,13 @@ def test_remove_only_2d_image(qtbot: "QtBot"):
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
     widget = make_metadata_widget(qtbot, viewer)
-    assert are_axis_widgets_enabled(widget) == (True, True)
+    assert are_axis_widgets_visible(widget) == (True, True)
 
     viewer.layers.pop()
 
     assert viewer.layers.selection == set()
     assert axis_names(widget) == ("0", "1")
-    assert are_axis_widgets_enabled(widget) == (True, True)
+    assert are_axis_widgets_visible(widget) == (True, True)
 
 
 def test_remove_only_3d_image(qtbot: "QtBot"):
@@ -141,13 +140,13 @@ def test_remove_only_3d_image(qtbot: "QtBot"):
     viewer.add_image(np.empty((4, 3, 2)))
     assert viewer.layers.selection == {viewer.layers[0]}
     widget = make_metadata_widget(qtbot, viewer)
-    assert are_axis_widgets_enabled(widget) == (True, True, True)
+    assert are_axis_widgets_visible(widget) == (True, True, True)
 
     viewer.layers.pop()
 
     assert viewer.layers.selection == set()
     assert axis_names(widget) == ("1", "2")
-    assert are_axis_widgets_enabled(widget) == (True, True)
+    assert are_axis_widgets_visible(widget) == (True, True)
 
 
 def test_set_axis_name(qtbot: "QtBot"):
@@ -236,9 +235,11 @@ def axis_names(widget: QMetadataWidget) -> Tuple[str, ...]:
     return widget._axes_widget.axis_names()
 
 
-def are_axis_widgets_enabled(widget: QMetadataWidget) -> Tuple[bool, ...]:
+def are_axis_widgets_visible(widget: QMetadataWidget) -> Tuple[bool, ...]:
     axes_widget = widget._axes_widget
-    return tuple(map(QWidget.isEnabled, axes_widget.axis_widgets()))
+    return tuple(
+        map(lambda w: w.isVisibleTo(widget), axes_widget.axis_widgets())
+    )
 
 
 def make_metadata_widget(

@@ -51,7 +51,7 @@ class AxesNameTypeWidget(QWidget):
         if layer is not None:
             ndim_diff = dims.ndim - layer.ndim
             for i, widget in enumerate(self.axis_widgets()):
-                widget.setEnabled(i >= ndim_diff)
+                widget.setVisible(i >= ndim_diff)
 
     def _update_num_axes(self, num_axes: int) -> None:
         num_widgets: int = self.layout().count()
