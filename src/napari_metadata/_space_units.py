@@ -3,6 +3,8 @@ from typing import List
 
 
 class SpaceUnits(Enum):
+    """Supported units for a spatial axis."""
+
     NONE = auto()
     NANOMETERS = auto()
     MICROMETERS = auto()

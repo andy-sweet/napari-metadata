@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 
 class AxisTypeUnitsWidget(QWidget):
+    """Shows and controls one axis type's units."""
+
     def __init__(
         self, parent: Optional["QWidget"], name: str, unit_types: List[str]
     ) -> None:
@@ -28,6 +30,8 @@ class AxisTypeUnitsWidget(QWidget):
 
 
 class AxesTypeUnitsWidget(QWidget):
+    """Shows and controls all axis types' units."""
+
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer

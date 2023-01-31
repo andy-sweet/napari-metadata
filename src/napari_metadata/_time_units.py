@@ -3,6 +3,8 @@ from typing import List
 
 
 class TimeUnits(Enum):
+    """Supported units for a temporal axis."""
+
     NONE = auto()
     NANOSECONDS = auto()
     MICROSECONDS = auto()

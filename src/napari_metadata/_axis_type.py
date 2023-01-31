@@ -3,6 +3,8 @@ from typing import List
 
 
 class AxisType(Enum):
+    """Supported axis types."""
+
     SPACE = auto()
     TIME = auto()
     CHANNEL = auto()

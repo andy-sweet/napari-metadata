@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 
 
 class AxisNameTypeWidget(QWidget):
+    """Shows and controls one axis' name and type."""
+
     def __init__(self, parent: Optional["QWidget"]) -> None:
         super().__init__(parent)
         self.name = QLineEdit()
@@ -31,6 +33,8 @@ class AxisNameTypeWidget(QWidget):
 
 
 class AxesNameTypeWidget(QWidget):
+    """Shows and controls all axes' names and types."""
+
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer
