@@ -16,7 +16,7 @@ def test_init_with_no_layers(qtbot: "QtBot"):
     widget = make_metadata_widget(qtbot, viewer)
 
     assert axis_names(widget) == ("0", "1")
-    assert are_axis_widgets_visible(widget) == (True, True)
+    assert are_axis_widgets_visible(widget) == (False, False)
 
 
 def test_init_with_one_selected_2d_image(qtbot: "QtBot"):
@@ -132,7 +132,7 @@ def test_remove_only_2d_image(qtbot: "QtBot"):
 
     assert viewer.layers.selection == set()
     assert axis_names(widget) == ("0", "1")
-    assert are_axis_widgets_visible(widget) == (True, True)
+    assert are_axis_widgets_visible(widget) == (False, False)
 
 
 def test_remove_only_3d_image(qtbot: "QtBot"):
@@ -146,7 +146,7 @@ def test_remove_only_3d_image(qtbot: "QtBot"):
 
     assert viewer.layers.selection == set()
     assert axis_names(widget) == ("1", "2")
-    assert are_axis_widgets_visible(widget) == (True, True)
+    assert are_axis_widgets_visible(widget) == (False, False)
 
 
 def test_set_axis_name(qtbot: "QtBot"):

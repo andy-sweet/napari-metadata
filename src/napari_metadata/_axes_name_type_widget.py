@@ -52,10 +52,10 @@ class AxesNameTypeWidget(QWidget):
         dims = self._viewer.dims
         self._update_num_axes(dims.ndim)
         self._set_axis_names(dims.axis_labels)
-        if layer is not None:
-            ndim_diff = dims.ndim - layer.ndim
-            for i, widget in enumerate(self.axis_widgets()):
-                widget.setVisible(i >= ndim_diff)
+        layer_ndim = 0 if layer is None else layer.ndim
+        ndim_diff = dims.ndim - layer_ndim
+        for i, widget in enumerate(self.axis_widgets()):
+            widget.setVisible(i >= ndim_diff)
 
     def _update_num_axes(self, num_axes: int) -> None:
         num_widgets: int = self.layout().count()
