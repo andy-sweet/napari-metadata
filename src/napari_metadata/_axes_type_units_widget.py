@@ -32,7 +32,7 @@ class AxesTypeUnitsWidget(QWidget):
         super().__init__()
         self._viewer: "ViewerModel" = viewer
         self._unit_registry: UnitRegistry = UnitRegistry()
-        self._PINT_TO_SPACE_UNIT: Dict[Unit:SpaceUnits] = {
+        self._PINT_TO_SPACE_UNIT: Dict[Unit, SpaceUnits] = {
             self._unit_registry.nanometer: SpaceUnits.NANOMETERS,
             self._unit_registry.micron: SpaceUnits.MICROMETERS,
             self._unit_registry.micrometer: SpaceUnits.MICROMETERS,
@@ -72,6 +72,11 @@ class AxesTypeUnitsWidget(QWidget):
         text = "none" if unit is None else self._convert_model_unit(unit)
         self.space.units.setCurrentText(text)
 
-    def _convert_model_unit(self, unit_name: str) -> Optional[str]:
-        unit = self._unit_registry(unit_name).units
-        return str(self._PINT_TO_SPACE_UNIT.get(unit)).lower()
+    def _convert_model_unit(self, model_unit: str) -> str:
+        quantity = self._unit_registry(model_unit)
+        if quantity is None:
+            return "none"
+        unit = quantity.units
+        if unit not in self._PINT_TO_SPACE_UNIT:
+            return "none"
+        return str(self._PINT_TO_SPACE_UNIT[unit])

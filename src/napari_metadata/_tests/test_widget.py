@@ -232,11 +232,11 @@ def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot: "QtBot"):
     assert space_units_widget.currentText() == "millimeters"
 
 
-def axis_names(widget: QMetadataWidget) -> Tuple[str]:
-    return tuple(widget._axes_widget.axis_names())
+def axis_names(widget: QMetadataWidget) -> Tuple[str, ...]:
+    return widget._axes_widget.axis_names()
 
 
-def are_axis_widgets_enabled(widget: QMetadataWidget) -> Tuple[bool]:
+def are_axis_widgets_enabled(widget: QMetadataWidget) -> Tuple[bool, ...]:
     axes_widget = widget._axes_widget
     return tuple(map(QWidget.isEnabled, axes_widget.axis_widgets()))
 

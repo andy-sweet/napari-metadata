@@ -64,7 +64,7 @@ class AxesNameTypeWidget(QWidget):
             item: QLayoutItem = self.layout().takeAt(num_widgets - (i + 1))
             item.widget().deleteLater()
 
-    def _make_axis_widget(self) -> None:
+    def _make_axis_widget(self) -> AxisNameTypeWidget:
         widget = AxisNameTypeWidget(self)
         widget.name.textChanged.connect(self._on_axis_name_changed)
         return widget
