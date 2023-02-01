@@ -231,6 +231,30 @@ def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot: "QtBot"):
     assert space_units_widget.currentText() == "millimeters"
 
 
+def test_set_layer_scale(qtbot: "QtBot"):
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
+    layer = viewer.layers[0]
+    assert layer.scale[0] == 1
+    pixel_width_widget = widget._pixel_width_widget()
+    assert pixel_width_widget.value() != 4.5
+
+    layer.scale = (4.5, layer.scale[1])
+
+    assert pixel_width_widget.value() == 4.5
+
+
+def test_set_pixel_size(qtbot: "QtBot"):
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
+    layer = viewer.layers[0]
+    pixel_width_widget = widget._pixel_width_widget()
+    assert pixel_width_widget.value() == 1
+    assert layer.scale != (4.5, 1)
+
+    pixel_width_widget.setValue(4.5)
+
+    assert layer.scale == (4.5, 1)
+
+
 def axis_names(widget: QMetadataWidget) -> Tuple[str, ...]:
     return widget._axes_widget.axis_names()
 

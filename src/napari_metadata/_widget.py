@@ -7,6 +7,7 @@ import zarr
 from ome_zarr.io import parse_url
 from ome_zarr.writer import write_image
 from qtpy.QtWidgets import (
+    QDoubleSpinBox,
     QFileDialog,
     QGridLayout,
     QHBoxLayout,
@@ -318,3 +319,6 @@ class QMetadataWidget(QWidget):
             group=root,
             axes=layer_axes,
         )
+
+    def _pixel_width_widget(self) -> QDoubleSpinBox:
+        return QDoubleSpinBox()
