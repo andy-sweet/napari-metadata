@@ -17,9 +17,13 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
+from napari_metadata._axes_type_units_widget import AxesTypeUnitsWidget
+
 if TYPE_CHECKING:
     from napari.components import ViewerModel
     from napari.layers import Layer
+
 
 # Each layer metadata attribute must define a getter and setter.
 # The getter takes inputs from napari's model (e.g. the selected layer)
@@ -57,19 +61,8 @@ def _get_data_size(layer: "Layer", viewer: "ViewerModel") -> str:
     return str(layer.data.shape)
 
 
-def _get_dimensions(layer: "Layer", viewer: "ViewerModel") -> str:
-    ndim = layer.ndim
-    dims = viewer.dims
-    all_dimensions = dims.axis_labels
-    return str(tuple(all_dimensions[i] for i in dims.order[-ndim:]))
-
-
 def _get_pixel_size(layer: "Layer", viewer: "ViewerModel") -> str:
     return str(tuple(layer.scale))
-
-
-def _get_pixel_size_unit(layer: "Layer", viewer: "ViewerModel") -> str:
-    return str(viewer.scale_bar.unit)
 
 
 def _get_pixel_type(layer: "Layer", viewer: "ViewerModel") -> str:
@@ -81,9 +74,7 @@ _ATTRIBUTE_GETTERS: Dict[str, Callable[["Layer", "ViewerModel"], Any]] = {
     "file-path": _get_file_path,
     "plugin": _get_plugin,
     "data-size": _get_data_size,
-    "dimensions": _get_dimensions,
     "pixel-size": _get_pixel_size,
-    "pixel-size-unit": _get_pixel_size_unit,
     "pixel-type": _get_pixel_type,
 }
 
@@ -104,36 +95,10 @@ def _set_data_size(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     raise NotImplementedError("Data size cannot be changed.")
 
 
-def _set_dimensions(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
-    labels = tuple(map(_strip_dimension_label, value.strip("()").split(",")))
-    _check_dimensionality(layer, labels)
-    dims = viewer.dims
-    all_labels = list(dims.axis_labels)
-    # Need noqa because pre-commit wants and doesn't want a space before
-    # the colon.
-    all_labels[-layer.ndim :] = labels  # noqa
-    dims.axis_labels = all_labels
-
-
-def _strip_dimension_label(label: str) -> str:
-    # TODO: strip whitespace and string quotes with one call.
-    return label.strip().strip("'\"")
-
-
 def _set_pixel_size(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     scale = tuple(map(float, value.strip("()").split(",")))
     _check_dimensionality(layer, scale)
     layer.scale = scale
-
-
-def _set_pixel_size_unit(
-    layer: "Layer", viewer: "ViewerModel", value: str
-) -> None:
-    # TODO: coercion from None should be really handled gracefully by napari
-    # because the declared type of the field is Optional[str].
-    if value.lower() in {"", "none", "pixel", "pixels"}:
-        value = None
-    viewer.scale_bar.unit = value
 
 
 def _set_pixel_type(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
@@ -155,9 +120,7 @@ _ATTRIBUTE_SETTERS: Dict[
     "file-path": _set_file_path,
     "plugin": _set_plugin,
     "data-size": _set_data_size,
-    "dimensions": _set_dimensions,
     "pixel-size": _set_pixel_size,
-    "pixel-size-unit": _set_pixel_size_unit,
     "pixel-type": _set_pixel_type,
 }
 
@@ -171,14 +134,6 @@ class QMetadataWidget(QWidget):
 
         self.viewer.layers.selection.events.changed.connect(
             self._on_selected_layers_changed
-        )
-
-        self.viewer.dims.events.axis_labels.connect(
-            self._on_dims_axis_labels_changed
-        )
-
-        self.viewer.scale_bar.events.unit.connect(
-            self._on_scale_bar_units_changed
         )
 
         layout = QVBoxLayout()
@@ -213,10 +168,16 @@ class QMetadataWidget(QWidget):
         self._add_attribute_widgets("file-path", editable=False)
         self._add_attribute_widgets("plugin", editable=False)
         self._add_attribute_widgets("data-size", editable=False)
-        self._add_attribute_widgets("dimensions", editable=True)
         self._add_attribute_widgets("pixel-size", editable=True)
-        self._add_attribute_widgets("pixel-size-unit", editable=True)
         self._add_attribute_widgets("pixel-type", editable=False)
+
+        self._axes_widget = AxesNameTypeWidget(napari_viewer)
+        layout.addWidget(QLabel("View and edit axis names and types"))
+        layout.addWidget(self._axes_widget)
+
+        self._types_widget = AxesTypeUnitsWidget(napari_viewer)
+        layout.addWidget(QLabel("View and edit axis type units"))
+        layout.addWidget(self._types_widget)
 
         self._on_selected_layers_changed()
 
@@ -264,6 +225,8 @@ class QMetadataWidget(QWidget):
         else:
             self._attribute_widget.hide()
 
+        self._axes_widget.set_selected_layer(layer)
+
         self._selected_layer = layer
 
     def _get_selected_layer(self) -> Optional["Layer"]:
@@ -278,14 +241,6 @@ class QMetadataWidget(QWidget):
         if layer := self._get_selected_layer():
             text = self._value_edits[name].text()
             _ATTRIBUTE_SETTERS[name](layer, self.viewer, text)
-
-    def _on_dims_axis_labels_changed(self) -> None:
-        if layer := self._get_selected_layer():
-            self._update_attribute(layer, "dimensions")
-
-    def _on_scale_bar_units_changed(self) -> None:
-        if layer := self._get_selected_layer():
-            self._update_attribute(layer, "pixel-size-unit")
 
     def _on_selected_layer_name_changed(self) -> None:
         if layer := self._get_selected_layer():

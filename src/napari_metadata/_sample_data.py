@@ -1,12 +1,38 @@
 from typing import TYPE_CHECKING, List
 
+import numpy as np
 from skimage.data import cells3d
 
 if TYPE_CHECKING:
     from npe2.types import LayerData
 
 
-def make_sample_data() -> List["LayerData"]:
+def make_nuclei_md_sample_data() -> List["LayerData"]:
+    all_data = cells3d()
+
+    nuclei_data = all_data[:, 1, :, :]
+    nuclei_metadata = {
+        "name": "nuclei",
+        "scale": (2, 1, 1),
+        "colormap": "green",
+        "blending": "additive",
+    }
+
+    mean_nuclei_data = np.mean(nuclei_data, axis=0)
+    mean_nuclei_metadata = {
+        "name": "nuclei_mean",
+        "scale": (1, 1),
+        "colormap": "blue",
+        "blending": "additive",
+    }
+
+    return [
+        (nuclei_data, nuclei_metadata),
+        (mean_nuclei_data, mean_nuclei_metadata),
+    ]
+
+
+def make_cells_3d_sample_data() -> List["LayerData"]:
     all_data = cells3d()
 
     shared_metadata = {

@@ -3,10 +3,11 @@ try:
 except ImportError:
     __version__ = "unknown"
 
-from ._sample_data import make_sample_data
+from ._sample_data import make_cells_3d_sample_data, make_nuclei_md_sample_data
 from ._widget import QMetadataWidget
 
 __all__ = (
-    "make_sample_data",
+    "make_cells_3d_sample_data",
+    "make_nuclei_md_sample_data",
     "QMetadataWidget",
 )
