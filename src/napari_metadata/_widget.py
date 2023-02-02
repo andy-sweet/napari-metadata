@@ -1,6 +1,14 @@
 import os
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 import napari_ome_zarr
 import zarr
@@ -19,6 +27,7 @@ from qtpy.QtWidgets import (
 )
 
 from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
+from napari_metadata._axes_spacing_widget import AxesSpacingWidget
 from napari_metadata._axes_type_units_widget import AxesTypeUnitsWidget
 
 if TYPE_CHECKING:
@@ -180,6 +189,10 @@ class QMetadataWidget(QWidget):
         layout.addWidget(QLabel("View and edit axis type units"))
         layout.addWidget(self._types_widget)
 
+        self._spacing_widget = AxesSpacingWidget()
+        layout.addWidget(QLabel("View and edit axis spacing"))
+        layout.addWidget(self._spacing_widget)
+
         self._on_selected_layers_changed()
 
     def _add_attribute_widgets(self, name: str, *, editable: bool) -> None:
@@ -228,7 +241,33 @@ class QMetadataWidget(QWidget):
 
         self._axes_widget.set_selected_layer(layer)
 
+        self._spacing_widget.set_selected_layer(layer)
+        self._spacing_widget.set_axis_names(self._get_axis_names())
+        self._spacing_widget.set_axis_units(self._get_axis_units())
+
         self._selected_layer = layer
+
+    def _get_axis_names(self) -> Tuple[str, ...]:
+        return tuple(
+            widget.name.text()
+            for widget in self._axes_widget.axis_widgets()
+            if widget.isVisible()
+        )
+
+    def _get_axis_units(self) -> Tuple[str, ...]:
+        units = []
+        space_unit = self._types_widget.space.units.currentText()
+        time_unit = self._types_widget.time.units.currentText()
+        for widget in self._axes_widget.axis_widgets():
+            if widget.isVisible():
+                unit = ""
+                axis_type = widget.type.currentText()
+                if axis_type == "space" and space_unit != "none":
+                    unit = space_unit
+                elif axis_type == "time" and time_unit != "none":
+                    unit = time_unit
+                units.append(unit)
+        return tuple(units)
 
     def _get_selected_layer(self) -> Optional["Layer"]:
         selection = self.viewer.layers.selection

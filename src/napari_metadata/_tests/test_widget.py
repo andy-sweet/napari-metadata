@@ -248,11 +248,11 @@ def test_set_pixel_size(qtbot: "QtBot"):
     layer = viewer.layers[0]
     pixel_width_widget = widget._pixel_width_widget()
     assert pixel_width_widget.value() == 1
-    assert layer.scale != (4.5, 1)
+    assert layer.scale[0] != 4.5
 
     pixel_width_widget.setValue(4.5)
 
-    assert layer.scale == (4.5, 1)
+    assert layer.scale[0] == 4.5
 
 
 def axis_names(widget: QMetadataWidget) -> Tuple[str, ...]:
