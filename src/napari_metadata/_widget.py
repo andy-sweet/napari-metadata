@@ -71,7 +71,7 @@ class QMetadataWidget(QWidget):
         self._axes_widget = AxesNameTypeWidget(napari_viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
-        self._spacing_widget = AxesSpacingWidget()
+        self._spacing_widget = AxesSpacingWidget(napari_viewer)
         self._add_attribute_row("Spacing", self._spacing_widget)
 
         self._spatial_units = SpatialUnitsComboBox(napari_viewer)
@@ -117,10 +117,6 @@ class QMetadataWidget(QWidget):
         self._axes_widget.set_selected_layer(layer)
 
         self._spacing_widget.set_selected_layer(layer)
-
-        layer_axis_widgets = self._axes_widget._layer_axis_widgets(layer)
-        layer_axis_names = tuple(w.name.text() for w in layer_axis_widgets)
-        self._spacing_widget.set_axis_names(layer_axis_names)
 
         self._selected_layer = layer
 
