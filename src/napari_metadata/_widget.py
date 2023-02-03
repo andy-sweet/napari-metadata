@@ -68,17 +68,10 @@ class QMetadataWidget(QWidget):
         self._add_attribute_row("Channel name", self._name)
         self._name.textChanged.connect(self._on_name_changed)
 
-        self._file_path = QLabel()
-        self._add_attribute_row("File name", self._file_path)
-
-        self._plugin = QLabel()
-        self._add_attribute_row("Plugin", self._plugin)
-
-        self._data_shape = QLabel()
-        self._add_attribute_row("Array shape", self._data_shape)
-
-        self._data_type = QLabel()
-        self._add_attribute_row("Data type", self._data_type)
+        self._file_path = self._add_readonly_attribute_row("File name")
+        self._plugin = self._add_readonly_attribute_row("Plugin")
+        self._data_shape = self._add_readonly_attribute_row("Array shape")
+        self._data_type = self._add_readonly_attribute_row("Data type")
 
         self._axes_widget = AxesNameTypeWidget(napari_viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
@@ -104,6 +97,12 @@ class QMetadataWidget(QWidget):
         row = layout.rowCount()
         layout.addWidget(QLabel(name), row, 0)
         layout.addWidget(widget, row, 1)
+
+    def _add_readonly_attribute_row(self, name: str) -> None:
+        widget = QLineEdit()
+        widget.setReadOnly(True)
+        self._add_attribute_row(name, widget)
+        return widget
 
     def _on_selected_layers_changed(self) -> None:
         layer = self._get_selected_layer()
