@@ -57,12 +57,6 @@ class AxesSpacingWidget(QWidget):
         for i, widget in enumerate(self._axis_widgets()):
             widget.name.setText(names[i])
 
-    def set_axis_units(self, units: Tuple[str, ...]) -> None:
-        widgets = self._axis_widgets()
-        assert len(units) == len(widgets)
-        for i, widget in enumerate(self._axis_widgets()):
-            widget.spacing.setSuffix(" " + units[i])
-
     def _on_layer_scale_changed(self) -> None:
         assert self._layer is not None
         scale = self._layer.scale

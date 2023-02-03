@@ -75,9 +75,6 @@ class QMetadataWidget(QWidget):
         self._add_attribute_row("Spacing", self._spacing_widget)
 
         self._spatial_units = SpatialUnitsComboBox(napari_viewer)
-        self._spatial_units.currentTextChanged.connect(
-            self._on_space_unit_changed
-        )
         self._add_attribute_row("Spatial units", self._spatial_units)
 
         self._temporal_units = QComboBox()
@@ -89,11 +86,6 @@ class QMetadataWidget(QWidget):
     def _on_name_changed(self):
         if layer := self._get_selected_layer():
             layer.name = self._name.text()
-
-    def _on_space_unit_changed(self):
-        if layer := self._get_selected_layer():
-            layer_axis_units = self._get_layer_axis_units(layer)
-            self._spacing_widget.set_axis_units(layer_axis_units)
 
     def _add_attribute_row(self, name: str, widget: QWidget) -> None:
         layout = self._attribute_widget.layout()
@@ -129,9 +121,6 @@ class QMetadataWidget(QWidget):
         layer_axis_widgets = self._axes_widget._layer_axis_widgets(layer)
         layer_axis_names = tuple(w.name.text() for w in layer_axis_widgets)
         self._spacing_widget.set_axis_names(layer_axis_names)
-
-        layer_axis_units = self._get_layer_axis_units(layer)
-        self._spacing_widget.set_axis_units(layer_axis_units)
 
         self._selected_layer = layer
 
