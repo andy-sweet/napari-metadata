@@ -185,6 +185,21 @@ def test_set_space_unit(qtbot: "QtBot"):
     assert viewer.scale_bar.unit == new_unit
 
 
+def test_set_space_unit_updates_spacing_units(qtbot: "QtBot"):
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
+    x_type_widget = widget._axes_widget.axis_widgets()[0]
+    x_type_widget.type.setCurrentText("space")
+    space_units_widget = widget._types_widget.space.units
+    new_unit = "millimeters"
+    assert space_units_widget.currentText() != new_unit
+    x_unit_widget = widget._spacing_widget._axis_widgets()[0]
+    x_unit_widget.spacing.suffix().strip() != new_unit
+
+    space_units_widget.setCurrentText(new_unit)
+
+    x_unit_widget.spacing.suffix().strip() == new_unit
+
+
 def test_set_viewer_scale_bar_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._types_widget.space.units

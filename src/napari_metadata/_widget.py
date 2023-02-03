@@ -1,21 +1,12 @@
 import os
 from functools import partial
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Optional,
-    Sequence,
-    Tuple,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple
 
 import napari_ome_zarr
 import zarr
 from ome_zarr.io import parse_url
 from ome_zarr.writer import write_image
 from qtpy.QtWidgets import (
-    QDoubleSpinBox,
     QFileDialog,
     QGridLayout,
     QHBoxLayout,
@@ -104,14 +95,6 @@ def _set_pixel_type(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     raise NotImplementedError("Pixel type cannot be changed.")
 
 
-def _check_dimensionality(layer: "Layer", values: Sequence) -> None:
-    if len(values) != layer.ndim:
-        raise RuntimeError(
-            f"Number of values ({len(values)}) does "
-            f"not match layer dimensionality ({layer.ndim})."
-        )
-
-
 _ATTRIBUTE_SETTERS: Dict[
     str, Callable[["Layer", "ViewerModel", str], None]
 ] = {
@@ -173,6 +156,9 @@ class QMetadataWidget(QWidget):
         layout.addWidget(self._axes_widget)
 
         self._types_widget = AxesTypeUnitsWidget(napari_viewer)
+        self._types_widget.space.units.currentTextChanged.connect(
+            self._on_space_unit_changed
+        )
         layout.addWidget(QLabel("View and edit axis type units"))
         layout.addWidget(self._types_widget)
 
@@ -181,6 +167,13 @@ class QMetadataWidget(QWidget):
         layout.addWidget(self._spacing_widget)
 
         self._on_selected_layers_changed()
+
+    def _on_space_unit_changed(self):
+        layer = self._get_selected_layer()
+        if layer is None:
+            return
+        layer_axis_units = self._get_layer_axis_units(layer)
+        self._spacing_widget.set_axis_units(layer_axis_units)
 
     def _add_attribute_widgets(self, name: str, *, editable: bool) -> None:
         value_edit = QLineEdit("")
@@ -230,6 +223,13 @@ class QMetadataWidget(QWidget):
         layer_axis_names = tuple(w.name.text() for w in layer_axis_widgets)
         self._spacing_widget.set_axis_names(layer_axis_names)
 
+        layer_axis_units = self._get_layer_axis_units(layer)
+        self._spacing_widget.set_axis_units(layer_axis_units)
+
+        self._selected_layer = layer
+
+    def _get_layer_axis_units(self, layer: "Layer") -> Tuple[str, ...]:
+        layer_axis_widgets = self._axes_widget._layer_axis_widgets(layer)
         layer_axis_units = []
         space_unit = self._types_widget.space.units.currentText()
         time_unit = self._types_widget.time.units.currentText()
@@ -241,10 +241,7 @@ class QMetadataWidget(QWidget):
             elif axis_type == "time":
                 unit = time_unit
             layer_axis_units.append(unit)
-
-        self._spacing_widget.set_axis_units(layer_axis_units)
-
-        self._selected_layer = layer
+        return layer_axis_units
 
     def _get_axis_names(self, layer) -> Tuple[str, ...]:
         return self._axes_widget._layer_axis_names(layer)
@@ -349,6 +346,3 @@ class QMetadataWidget(QWidget):
             group=root,
             axes=layer_axes,
         )
-
-    def _pixel_width_widget(self) -> QDoubleSpinBox:
-        return QDoubleSpinBox()
