@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Optional, Tuple, cast
 
 from qtpy.QtWidgets import (
+    QAbstractSpinBox,
     QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
@@ -21,7 +22,12 @@ class AxisSpacingWidget(QWidget):
         super().__init__(parent)
         self.name = QLabel()
         self.spacing = QDoubleSpinBox()
+        self.spacing.setDecimals(6)
+        self.spacing.setRange(1e-6, 1e6)
         self.spacing.setValue(1)
+        self.spacing.setStepType(
+            QAbstractSpinBox.StepType.AdaptiveDecimalStepType
+        )
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
