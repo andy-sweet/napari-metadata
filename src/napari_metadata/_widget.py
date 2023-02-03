@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
 
 from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
 from napari_metadata._axes_spacing_widget import AxesSpacingWidget
-from napari_metadata._axes_type_units_widget import SpatialUnitsComboBox
+from napari_metadata._spatial_units_combo_box import SpatialUnitsComboBox
 from napari_metadata._time_units import TimeUnits
 
 if TYPE_CHECKING:
