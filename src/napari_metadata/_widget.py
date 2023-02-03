@@ -98,7 +98,6 @@ class QMetadataWidget(QWidget):
         view_controls.addStretch(1)
         self._close_button = QPushButton()
         # TODO: dock widget should be closed when clicked.
-        self._close_button.setEnabled(False)
         view_controls.addWidget(self._close_button)
 
         self._on_show_full_toggled()
