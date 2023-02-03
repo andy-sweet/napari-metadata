@@ -36,6 +36,7 @@ class AxisSpacingWidget(QWidget):
         self.setLayout(layout)
 
 
+# TODO: reduce redundancy between this class and the AxesNameTypeWidget.
 class AxesSpacingWidget(QWidget):
     """Shows and controls all axes' names and spacing."""
 

@@ -58,17 +58,6 @@ class AxesNameTypeWidget(QWidget):
         for i, widget in enumerate(self.axis_widgets()):
             widget.setVisible(i >= ndim_diff)
 
-    def _layer_axis_widgets(
-        self, layer: Optional["Layer"]
-    ) -> Tuple[AxisNameTypeWidget, ...]:
-        layer_ndim = 0 if layer is None else layer.ndim
-        ndim_diff = self._viewer.dims.ndim - layer_ndim
-        widgets = []
-        for i, widget in enumerate(self.axis_widgets()):
-            if i >= ndim_diff:
-                widgets.append(widget)
-        return tuple(widgets)
-
     def _update_num_axes(self, num_axes: int) -> None:
         num_widgets: int = self.layout().count()
         # Add any missing widgets.
