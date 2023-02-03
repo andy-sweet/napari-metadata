@@ -36,6 +36,7 @@ class AxesSpacingWidget(QWidget):
         super().__init__()
         self._layer: Optional["Layer"] = None
         layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
     def set_selected_layer(self, layer: Optional["Layer"]) -> None:

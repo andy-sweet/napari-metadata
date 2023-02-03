@@ -175,7 +175,7 @@ def test_set_viewer_axis_label(qtbot: "QtBot"):
 
 def test_set_space_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    space_units_widget = widget._types_widget.space.units
+    space_units_widget = widget._spatial_units
     new_unit = "millimeters"
     assert space_units_widget.currentText() != new_unit
     assert viewer.scale_bar.unit != new_unit
@@ -189,7 +189,7 @@ def test_set_space_unit_updates_spacing_units(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     x_type_widget = widget._axes_widget.axis_widgets()[0]
     x_type_widget.type.setCurrentText("space")
-    space_units_widget = widget._types_widget.space.units
+    space_units_widget = widget._spatial_units
     new_unit = "millimeters"
     assert space_units_widget.currentText() != new_unit
     x_unit_widget = widget._spacing_widget._axis_widgets()[0]
@@ -202,7 +202,7 @@ def test_set_space_unit_updates_spacing_units(qtbot: "QtBot"):
 
 def test_set_viewer_scale_bar_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    space_units_widget = widget._types_widget.space.units
+    space_units_widget = widget._spatial_units
     new_unit = "millimeters"
     assert viewer.scale_bar.unit != new_unit
     assert space_units_widget.currentText() != new_unit
@@ -214,7 +214,7 @@ def test_set_viewer_scale_bar_unit(qtbot: "QtBot"):
 
 def test_set_viewer_scale_bar_unit_to_none(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    space_units_widget = widget._types_widget.space.units
+    space_units_widget = widget._spatial_units
     viewer.scale_bar.unit = "millimeters"
     assert space_units_widget.currentText() != "none"
 
@@ -226,7 +226,7 @@ def test_set_viewer_scale_bar_unit_to_none(qtbot: "QtBot"):
 def test_set_viewer_scale_bar_unit_to_unknown(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     viewer.scale_bar.unit = "millimeters"
-    space_units_widget = widget._types_widget.space.units
+    space_units_widget = widget._spatial_units
     assert space_units_widget.currentText() != "none"
 
     # Supported by pint/napari, but not supported by our widget.
@@ -237,7 +237,7 @@ def test_set_viewer_scale_bar_unit_to_unknown(qtbot: "QtBot"):
 
 def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    space_units_widget = widget._types_widget.space.units
+    space_units_widget = widget._spatial_units
     assert viewer.scale_bar.unit != "mm"
     assert space_units_widget.currentText() != "millimeters"
 
