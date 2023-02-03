@@ -71,10 +71,6 @@ def _get_data_size(layer: "Layer", viewer: "ViewerModel") -> str:
     return str(layer.data.shape)
 
 
-def _get_pixel_size(layer: "Layer", viewer: "ViewerModel") -> str:
-    return str(tuple(layer.scale))
-
-
 def _get_pixel_type(layer: "Layer", viewer: "ViewerModel") -> str:
     return str(layer.data.dtype)
 
@@ -84,7 +80,6 @@ _ATTRIBUTE_GETTERS: Dict[str, Callable[["Layer", "ViewerModel"], Any]] = {
     "file-path": _get_file_path,
     "plugin": _get_plugin,
     "data-size": _get_data_size,
-    "pixel-size": _get_pixel_size,
     "pixel-type": _get_pixel_type,
 }
 
@@ -103,12 +98,6 @@ def _set_plugin(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
 
 def _set_data_size(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
     raise NotImplementedError("Data size cannot be changed.")
-
-
-def _set_pixel_size(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
-    scale = tuple(map(float, value.strip("()").split(",")))
-    _check_dimensionality(layer, scale)
-    layer.scale = scale
 
 
 def _set_pixel_type(layer: "Layer", viewer: "ViewerModel", value: str) -> None:
@@ -130,7 +119,6 @@ _ATTRIBUTE_SETTERS: Dict[
     "file-path": _set_file_path,
     "plugin": _set_plugin,
     "data-size": _set_data_size,
-    "pixel-size": _set_pixel_size,
     "pixel-type": _set_pixel_type,
 }
 
@@ -178,7 +166,6 @@ class QMetadataWidget(QWidget):
         self._add_attribute_widgets("file-path", editable=False)
         self._add_attribute_widgets("plugin", editable=False)
         self._add_attribute_widgets("data-size", editable=False)
-        self._add_attribute_widgets("pixel-size", editable=True)
         self._add_attribute_widgets("pixel-type", editable=False)
 
         self._axes_widget = AxesNameTypeWidget(napari_viewer)
@@ -225,14 +212,10 @@ class QMetadataWidget(QWidget):
             self._selected_layer.events.data.disconnect(
                 self._on_selected_layer_data_changed
             )
-            self._selected_layer.events.scale.disconnect(
-                self._on_selected_layer_scale_changed
-            )
 
         if layer is not None:
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.data.connect(self._on_selected_layer_data_changed)
-            layer.events.scale.connect(self._on_selected_layer_scale_changed)
             for name in self._value_edits:
                 self._update_attribute(layer, name)
             self._attribute_widget.show()
@@ -242,17 +225,29 @@ class QMetadataWidget(QWidget):
         self._axes_widget.set_selected_layer(layer)
 
         self._spacing_widget.set_selected_layer(layer)
-        self._spacing_widget.set_axis_names(self._get_axis_names())
-        self._spacing_widget.set_axis_units(self._get_axis_units())
+        layer_axis_widgets = self._axes_widget._layer_axis_widgets(layer)
+
+        layer_axis_names = tuple(w.name.text() for w in layer_axis_widgets)
+        self._spacing_widget.set_axis_names(layer_axis_names)
+
+        layer_axis_units = []
+        space_unit = self._types_widget.space.units.currentText()
+        time_unit = self._types_widget.time.units.currentText()
+        for widget in layer_axis_widgets:
+            unit = ""
+            axis_type = widget.type.currentText()
+            if axis_type == "space":
+                unit = space_unit
+            elif axis_type == "time":
+                unit = time_unit
+            layer_axis_units.append(unit)
+
+        self._spacing_widget.set_axis_units(layer_axis_units)
 
         self._selected_layer = layer
 
-    def _get_axis_names(self) -> Tuple[str, ...]:
-        return tuple(
-            widget.name.text()
-            for widget in self._axes_widget.axis_widgets()
-            if widget.isVisible()
-        )
+    def _get_axis_names(self, layer) -> Tuple[str, ...]:
+        return self._axes_widget._layer_axis_names(layer)
 
     def _get_axis_units(self) -> Tuple[str, ...]:
         units = []
@@ -290,10 +285,6 @@ class QMetadataWidget(QWidget):
         if layer := self._get_selected_layer():
             self._update_attribute(layer, "data-size")
             self._update_attribute(layer, "pixel-type")
-
-    def _on_selected_layer_scale_changed(self) -> None:
-        if layer := self._get_selected_layer():
-            self._update_attribute(layer, "pixel-size")
 
     def _on_open_clicked(self) -> None:
         path = QFileDialog.getExistingDirectory(

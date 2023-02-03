@@ -235,7 +235,7 @@ def test_set_layer_scale(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
     assert layer.scale[0] == 1
-    pixel_width_widget = widget._pixel_width_widget()
+    pixel_width_widget = widget._spacing_widget._axis_widgets()[0].spacing
     assert pixel_width_widget.value() != 4.5
 
     layer.scale = (4.5, layer.scale[1])
@@ -246,7 +246,7 @@ def test_set_layer_scale(qtbot: "QtBot"):
 def test_set_pixel_size(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
-    pixel_width_widget = widget._pixel_width_widget()
+    pixel_width_widget = widget._spacing_widget._axis_widgets()[0].spacing
     assert pixel_width_widget.value() == 1
     assert layer.scale[0] != 4.5
 
