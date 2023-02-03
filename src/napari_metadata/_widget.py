@@ -68,6 +68,18 @@ class QMetadataWidget(QWidget):
         self._add_attribute_row("Channel name", self._name)
         self._name.textChanged.connect(self._on_name_changed)
 
+        self._file_path = QLabel()
+        self._add_attribute_row("File name", self._file_path)
+
+        self._plugin = QLabel()
+        self._add_attribute_row("Plugin", self._plugin)
+
+        self._data_shape = QLabel()
+        self._add_attribute_row("Array shape", self._data_shape)
+
+        self._data_type = QLabel()
+        self._add_attribute_row("Data type", self._data_type)
+
         self._axes_widget = AxesNameTypeWidget(napari_viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
@@ -106,37 +118,39 @@ class QMetadataWidget(QWidget):
             self._selected_layer.events.name.disconnect(
                 self._on_selected_layer_name_changed
             )
+            self._selected_layer.events.data.disconnect(
+                self._on_selected_layer_data_changed
+            )
 
         if layer is not None:
+            self._name.setText(layer.name)
+            self._file_path.setText(str(layer.source.path))
+            self._plugin.setText(self._get_plugin_info(layer))
+            self._data_shape.setText(str(layer.data.shape))
+            self._data_type.setText(str(layer.data.dtype))
+
             layer.events.name.connect(self._on_selected_layer_name_changed)
-            self._on_selected_layer_name_changed()
+            layer.events.data.connect(self._on_selected_layer_data_changed)
+
             self._attribute_widget.show()
         else:
             self._attribute_widget.hide()
 
         self._axes_widget.set_selected_layer(layer)
-
         self._spacing_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
 
-    def _get_layer_axis_units(self, layer: "Layer") -> Tuple[str, ...]:
-        layer_axis_widgets = self._axes_widget._layer_axis_widgets(layer)
-        layer_axis_units = []
-        space_unit = self._spatial_units.currentText()
-        time_unit = self._temporal_units.currentText()
-        for widget in layer_axis_widgets:
-            unit = ""
-            axis_type = widget.type.currentText()
-            if axis_type == "space":
-                unit = space_unit
-            elif axis_type == "time":
-                unit = time_unit
-            layer_axis_units.append(unit)
-        return layer_axis_units
-
-    def _get_axis_names(self, layer) -> Tuple[str, ...]:
+    def _get_axis_names(self, layer: "Layer") -> Tuple[str, ...]:
         return self._axes_widget._layer_axis_names(layer)
+
+    def _get_plugin_info(self, layer: "Layer") -> str:
+        source = layer.source
+        return (
+            str(source.reader_plugin)
+            if source.sample is None
+            else str(source.sample)
+        )
 
     def _get_selected_layer(self) -> Optional["Layer"]:
         selection = self.viewer.layers.selection
@@ -145,6 +159,11 @@ class QMetadataWidget(QWidget):
     def _on_selected_layer_name_changed(self) -> None:
         if layer := self._get_selected_layer():
             self._name.setText(layer.name)
+
+    def _on_selected_layer_data_changed(self) -> None:
+        if layer := self._get_selected_layer():
+            self._data_shape.setText(str(layer.data.shape))
+            self._data_type.setText(str(layer.data.dtype))
 
     def _on_open_clicked(self) -> None:
         path = QFileDialog.getExistingDirectory(
