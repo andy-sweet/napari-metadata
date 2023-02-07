@@ -40,6 +40,7 @@ class AxesNameTypeWidget(QWidget):
         self._viewer: "ViewerModel" = viewer
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
         self._viewer.dims.events.axis_labels.connect(
