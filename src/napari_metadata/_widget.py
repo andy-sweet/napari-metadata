@@ -86,11 +86,50 @@ class QMetadataWidget(QWidget):
         self._temporal_units.addItems(TimeUnits.names())
         self._add_attribute_row("Temporal units", self._temporal_units)
 
+        layout.addStretch(1)
+
+        view_controls = QHBoxLayout()
+        self._show_full = QPushButton()
+        self._show_full.setChecked(False)
+        self._show_full.setCheckable(True)
+        self._show_full.toggled.connect(self._on_show_full_toggled)
+
+        view_controls.addWidget(self._show_full)
+        view_controls.addStretch(1)
+        self._close_button = QPushButton()
+        # TODO: dock widget should be closed when clicked.
+        view_controls.addWidget(self._close_button)
+
+        self._on_show_full_toggled()
+
+        layout.addLayout(view_controls)
+
         self._on_selected_layers_changed()
+
+    def _on_show_full_toggled(self) -> None:
+        show_full = self._show_full.isChecked()
+        if show_full:
+            self._show_full.setText("View editable metadata")
+            self._close_button.setText("Close")
+        else:
+            self._show_full.setText("View full metadata")
+            self._close_button.setText("Cancel")
+
+        for row in range(self._attribute_layout.rowCount()):
+            item = self._attribute_layout.itemAtPosition(row, 1)
+            if item is not None:
+                widget = item.widget()
+                if isinstance(widget, QLineEdit) and widget.isReadOnly():
+                    self._set_attribute_row_visible(row, show_full)
 
     def _on_name_changed(self):
         if layer := self._get_selected_layer():
             layer.name = self._name.text()
+
+    def _set_attribute_row_visible(self, row: int, visible: bool) -> None:
+        for column in range(self._attribute_layout.columnCount()):
+            item = self._attribute_layout.itemAtPosition(row, column)
+            item.widget().setVisible(visible)
 
     def _add_attribute_row(self, name: str, widget: QWidget) -> None:
         layout = self._attribute_widget.layout()
