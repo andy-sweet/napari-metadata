@@ -1,5 +1,12 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Protocol, Tuple, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    List,
+    Optional,
+    Protocol,
+    Tuple,
+    runtime_checkable,
+)
 
 from ._axis_type import AxisType
 from ._space_units import SpaceUnits
@@ -60,13 +67,13 @@ EXTRA_METADATA_KEY = "napari-metadata-plugin"
 
 @dataclass
 class ExtraMetadata:
-    axes: Tuple[Axis, ...]
+    axes: List[Axis]
     experiment_id: str = ""
 
     @classmethod
     def from_layer(cls, layer: "Layer") -> "ExtraMetadata":
         return ExtraMetadata(
-            axes=tuple(SpaceAxis(name=str(i)) for i in range(layer.ndim)),
+            axes=[SpaceAxis(name=str(i)) for i in range(layer.ndim)],
         )
 
 
@@ -76,7 +83,16 @@ def get_layer_extra_metadata(layer: "Layer") -> Optional[ExtraMetadata]:
 
 def get_layer_axis_names(layer: "Layer") -> Tuple[str, ...]:
     extra_metadata = get_layer_extra_metadata(layer)
+    if extra_metadata is None:
+        return ()
     return tuple(axis.name for axis in extra_metadata.axes)
+
+
+def get_layer_axis_unit_names(layer: "Layer") -> Tuple[str, ...]:
+    extra_metadata = get_layer_extra_metadata(layer)
+    if extra_metadata is None:
+        return ()
+    return tuple(axis.get_unit_name() for axis in extra_metadata.axes)
 
 
 def set_layer_axes(layer: "Layer", axes: Tuple[Axis, ...]) -> None:
@@ -94,12 +110,18 @@ def set_layer_axis_names(layer: "Layer", names: Tuple[str, ...]) -> None:
 
 
 def set_layer_space_unit(layer: "Layer", unit: SpaceUnits) -> None:
+    extra_metadata = get_layer_extra_metadata(layer)
+    if extra_metadata is None:
+        return
     for axis in layer.metadata[EXTRA_METADATA_KEY].axes:
         if isinstance(axis, SpaceAxis):
             axis.unit = unit
 
 
 def set_layer_time_unit(layer: "Layer", unit: TimeUnits) -> None:
+    extra_metadata = get_layer_extra_metadata(layer)
+    if extra_metadata is None:
+        return
     for axis in layer.metadata[EXTRA_METADATA_KEY].axes:
         if isinstance(axis, TimeAxis):
             axis.unit = unit

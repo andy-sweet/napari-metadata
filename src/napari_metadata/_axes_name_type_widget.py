@@ -15,6 +15,7 @@ from napari_metadata._model import (
     ChannelAxis,
     SpaceAxis,
     TimeAxis,
+    get_layer_extra_metadata,
     set_layer_axis_names,
 )
 
@@ -41,10 +42,10 @@ class AxisNameTypeWidget(QWidget):
     def to_axis(self) -> Axis:
         axis_type = self.type.currentText()
         if axis_type == "channel":
-            return ChannelAxis(name=self.name.text)
+            return ChannelAxis(name=self.name.text())
         elif axis_type == "time":
-            return TimeAxis(name=self.name.text)
-        return SpaceAxis(name=self.name.text)
+            return TimeAxis(name=self.name.text())
+        return SpaceAxis(name=self.name.text())
 
 
 class AxesNameTypeWidget(QWidget):
@@ -87,6 +88,7 @@ class AxesNameTypeWidget(QWidget):
     def _make_axis_widget(self) -> AxisNameTypeWidget:
         widget = AxisNameTypeWidget(self)
         widget.name.textChanged.connect(self._on_axis_name_changed)
+        widget.type.currentTextChanged.connect(self._on_axis_type_changed)
         return widget
 
     def _on_viewer_dims_axis_labels_changed(self, event) -> None:
@@ -115,3 +117,13 @@ class AxesNameTypeWidget(QWidget):
 
     def _on_axis_name_changed(self) -> None:
         self._viewer.dims.axis_labels = self.axis_names()
+
+    def _on_axis_type_changed(self) -> None:
+        axis_widgets = self.axis_widgets()
+        ndim = len(axis_widgets)
+        for layer in self._viewer.layers:
+            if extras := get_layer_extra_metadata(layer):
+                for i in range(layer.ndim):
+                    extras.axes[i] = axis_widgets[
+                        i + ndim - layer.ndim
+                    ].to_axis()
