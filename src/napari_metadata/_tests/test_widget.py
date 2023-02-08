@@ -4,6 +4,7 @@ import numpy as np
 from napari.components import ViewerModel
 
 from napari_metadata import QMetadataWidget
+from napari_metadata._model import get_layer_axis_names
 
 if TYPE_CHECKING:
     from pytestqt.qtbot import QtBot
@@ -152,25 +153,31 @@ def test_remove_only_3d_image(qtbot: "QtBot"):
 def test_set_axis_name(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     first_axis_widget = widget._axes_widget.axis_widgets()[0]
+    layer = viewer.layers[0]
     new_name = "y"
     assert first_axis_widget.name.text() != new_name
+    assert get_layer_axis_names(layer)[0] != new_name
     assert viewer.dims.axis_labels[0] != new_name
 
     first_axis_widget.name.setText(new_name)
 
     assert viewer.dims.axis_labels[0] == new_name
+    assert get_layer_axis_names(layer)[0] == new_name
 
 
 def test_set_viewer_axis_label(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     first_axis_widget = widget._axes_widget.axis_widgets()[0]
+    layer = viewer.layers[0]
     new_name = "y"
     assert viewer.dims.axis_labels[0] != new_name
+    assert get_layer_axis_names(layer)[0] != new_name
     assert first_axis_widget.name.text() != new_name
 
     viewer.dims.axis_labels = [new_name, viewer.dims.axis_labels[1]]
 
     assert first_axis_widget.name.text() == new_name
+    assert get_layer_axis_names(layer)[0] == new_name
 
 
 def test_set_space_unit(qtbot: "QtBot"):

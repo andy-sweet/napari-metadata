@@ -10,6 +10,13 @@ from qtpy.QtWidgets import (
 )
 
 from napari_metadata._axis_type import AxisType
+from napari_metadata._model import (
+    Axis,
+    ChannelAxis,
+    SpaceAxis,
+    TimeAxis,
+    set_layer_axis_names,
+)
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -30,6 +37,14 @@ class AxisNameTypeWidget(QWidget):
         layout.addWidget(self.name)
         layout.addWidget(self.type)
         self.setLayout(layout)
+
+    def to_axis(self) -> Axis:
+        axis_type = self.type.currentText()
+        if axis_type == "channel":
+            return ChannelAxis(name=self.name.text)
+        elif axis_type == "time":
+            return TimeAxis(name=self.name.text)
+        return SpaceAxis(name=self.name.text)
 
 
 class AxesNameTypeWidget(QWidget):
@@ -82,6 +97,11 @@ class AxesNameTypeWidget(QWidget):
         assert len(names) == len(widgets)
         for name, widget in zip(names, widgets):
             widget.name.setText(name)
+        for layer in self._viewer.layers:
+            layer_axis_names = self._viewer.dims.axis_labels[
+                -layer.ndim :  # noqa
+            ]
+            set_layer_axis_names(layer, layer_axis_names)
 
     def axis_widgets(self) -> Tuple[AxisNameTypeWidget, ...]:
         layout = self.layout()

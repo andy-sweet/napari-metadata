@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
 
 from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
 from napari_metadata._axes_spacing_widget import AxesSpacingWidget
+from napari_metadata._model import coerce_layer_extra_metadata
 from napari_metadata._spatial_units_combo_box import SpatialUnitsComboBox
 from napari_metadata._time_units import TimeUnits
 
@@ -81,10 +82,12 @@ class QMetadataWidget(QWidget):
 
         self._spatial_units = SpatialUnitsComboBox(napari_viewer)
         self._add_attribute_row("Spatial units", self._spatial_units)
+        # self._spatial_units.currentTextChanged.connect(self._on_spatial_units_changed)
 
         self._temporal_units = QComboBox()
         self._temporal_units.addItems(TimeUnits.names())
         self._add_attribute_row("Temporal units", self._temporal_units)
+        # self._temporal_units.currentTextChanged.connect(self._on_temporal_units_changed)
 
         layout.addStretch(1)
 
@@ -159,6 +162,8 @@ class QMetadataWidget(QWidget):
             self._selected_layer.events.data.disconnect(
                 self._on_selected_layer_data_changed
             )
+
+        layer = coerce_layer_extra_metadata(layer)
 
         if layer is not None:
             self._name.setText(layer.name)
