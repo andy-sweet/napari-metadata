@@ -16,12 +16,12 @@ class SpatialUnitsComboBox(QComboBox):
         self.addItems(SpaceUnits.names())
         self._unit_registry: UnitRegistry = UnitRegistry()
         self._PINT_TO_SPACE_UNIT: Dict[Unit, SpaceUnits] = {
-            self._unit_registry.nanometer: SpaceUnits.NANOMETERS,
-            self._unit_registry.micron: SpaceUnits.MICROMETERS,
-            self._unit_registry.micrometer: SpaceUnits.MICROMETERS,
-            self._unit_registry.millimeter: SpaceUnits.MILLIMETERS,
-            self._unit_registry.centimeter: SpaceUnits.CENTIMETERS,
-            self._unit_registry.meter: SpaceUnits.METERS,
+            self._unit_registry.nanometer: SpaceUnits.NANOMETER,
+            self._unit_registry.micron: SpaceUnits.MICROMETER,
+            self._unit_registry.micrometer: SpaceUnits.MICROMETER,
+            self._unit_registry.millimeter: SpaceUnits.MILLIMETER,
+            self._unit_registry.centimeter: SpaceUnits.CENTIMETER,
+            self._unit_registry.meter: SpaceUnits.METER,
         }
 
         self._viewer.scale_bar.events.unit.connect(

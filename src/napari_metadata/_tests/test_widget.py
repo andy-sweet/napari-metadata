@@ -187,7 +187,7 @@ def test_set_space_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._spatial_units
     layer = viewer.layers[0]
-    new_unit = "millimeters"
+    new_unit = "millimeter"
     assert space_units_widget.currentText() != new_unit
     assert get_layer_axis_unit_names(layer)[0] != new_unit
     assert viewer.scale_bar.unit != new_unit
@@ -201,7 +201,7 @@ def test_set_space_unit(qtbot: "QtBot"):
 def test_set_viewer_scale_bar_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._spatial_units
-    new_unit = "millimeters"
+    new_unit = "millimeter"
     assert viewer.scale_bar.unit != new_unit
     assert space_units_widget.currentText() != new_unit
 
@@ -213,7 +213,7 @@ def test_set_viewer_scale_bar_unit(qtbot: "QtBot"):
 def test_set_viewer_scale_bar_unit_to_none(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._spatial_units
-    viewer.scale_bar.unit = "millimeters"
+    viewer.scale_bar.unit = "millimeter"
     assert space_units_widget.currentText() != "none"
 
     viewer.scale_bar.unit = None
@@ -223,7 +223,7 @@ def test_set_viewer_scale_bar_unit_to_none(qtbot: "QtBot"):
 
 def test_set_viewer_scale_bar_unit_to_unknown(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    viewer.scale_bar.unit = "millimeters"
+    viewer.scale_bar.unit = "millimeter"
     space_units_widget = widget._spatial_units
     assert space_units_widget.currentText() != "none"
 
@@ -237,11 +237,11 @@ def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._spatial_units
     assert viewer.scale_bar.unit != "mm"
-    assert space_units_widget.currentText() != "millimeters"
+    assert space_units_widget.currentText() != "millimeter"
 
     viewer.scale_bar.unit = "mm"
 
-    assert space_units_widget.currentText() == "millimeters"
+    assert space_units_widget.currentText() == "millimeter"
 
 
 def test_set_time_unit(qtbot: "QtBot"):
@@ -250,7 +250,7 @@ def test_set_time_unit(qtbot: "QtBot"):
     name_type_widget = widget._axes_widget.axis_widgets()[0]
     name_type_widget.type.setCurrentText("time")
     layer = viewer.layers[0]
-    new_unit = "milliseconds"
+    new_unit = "millisecond"
     assert time_units_widget.currentText() != new_unit
     assert get_layer_axis_unit_names(layer)[0] != new_unit
 

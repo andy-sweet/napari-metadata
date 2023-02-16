@@ -6,11 +6,11 @@ class SpaceUnits(Enum):
     """Supported units for a spatial axis."""
 
     NONE = auto()
-    NANOMETERS = auto()
-    MICROMETERS = auto()
-    MILLIMETERS = auto()
-    CENTIMETERS = auto()
-    METERS = auto()
+    NANOMETER = auto()
+    MICROMETER = auto()
+    MILLIMETER = auto()
+    CENTIMETER = auto()
+    METER = auto()
 
     def __str__(self) -> str:
         return self.name.lower()
