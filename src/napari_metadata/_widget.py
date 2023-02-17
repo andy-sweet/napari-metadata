@@ -47,24 +47,6 @@ class QMetadataWidget(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        layout.addWidget(QLabel("Open and save a layer with metadata"))
-
-        self._io_widget = QWidget()
-        io_layout = QHBoxLayout()
-        self._io_widget.setLayout(io_layout)
-
-        self._open_button = QPushButton("Open layer")
-        self._open_button.clicked.connect(self._on_open_clicked)
-        io_layout.addWidget(self._open_button)
-
-        self._save_button = QPushButton("Save layer")
-        self._save_button.clicked.connect(self._on_save_clicked)
-        io_layout.addWidget(self._save_button)
-
-        layout.addWidget(self._io_widget)
-
-        layout.addWidget(QLabel("View and edit selected layer metadata"))
-
         self._attribute_widget = QWidget()
         layout.addWidget(self._attribute_widget)
 

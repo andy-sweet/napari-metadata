@@ -12,7 +12,7 @@ contributions:
       python_name: napari_metadata._widget:QMetadataWidget
       title: Make metadata Qt widget
     - id: napari-metadata.write_image
-      python_name: napari_metadata._writer
+      python_name: napari_metadata._writer:write_image
       title: Write image with metadata
   sample_data:
     - command: napari-metadata.make_cells_3d_sample_data
