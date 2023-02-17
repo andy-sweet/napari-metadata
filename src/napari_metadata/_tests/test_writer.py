@@ -7,7 +7,14 @@ from npe2.types import ArrayLike
 from ome_zarr.io import parse_url
 from ome_zarr.reader import Reader
 
-from .._model import EXTRA_METADATA_KEY, ExtraMetadata, SpaceAxis, SpaceUnits
+from .._model import (
+    EXTRA_METADATA_KEY,
+    ExtraMetadata,
+    SpaceAxis,
+    SpaceUnits,
+    TimeAxis,
+    TimeUnits,
+)
 from .._writer import write_image
 
 
@@ -156,3 +163,46 @@ def test_write_multiscale_2d_image_with_extras(rng, path):
     assert len(transforms_lo_res) == 2
     assert tuple(transforms_lo_res[0]["scale"]) == (4, 6)
     assert tuple(transforms_lo_res[1]["translation"]) == (-1, 1)
+
+
+def test_write_3d_image_with_extras(rng, path):
+    image = Image(
+        rng.random((5, 6, 7)),
+        name="sandy",
+        scale=(1, 3, 4),
+        translate=(9000, -1, 1),
+    )
+    data, metadata, _ = image.as_layer_data_tuple()
+    metadata[EXTRA_METADATA_KEY] = ExtraMetadata(
+        axes=[
+            TimeAxis(name="t", unit=TimeUnits.SECOND),
+            SpaceAxis(name="y", unit=SpaceUnits.MILLIMETER),
+            SpaceAxis(name="x", unit=SpaceUnits.MILLIMETER),
+        ],
+    )
+
+    paths_written = write_image(path, data, metadata)
+
+    assert len(paths_written) == 1
+    assert paths_written[0] == path
+
+    read_data, read_metadata = read_ome_zarr(path)
+
+    assert len(read_data) == 1
+    np.testing.assert_array_equal(read_data[0], data)
+
+    assert read_metadata["name"] == "sandy"
+
+    assert ome_axis_names(read_metadata) == ("t", "y", "x")
+    assert ome_axis_types(read_metadata) == ("time", "space", "space")
+    assert ome_axis_units(read_metadata) == (
+        "second",
+        "millimeter",
+        "millimeter",
+    )
+
+    transforms = read_metadata["coordinateTransformations"]
+    assert len(transforms) == 1
+    assert len(transforms[0]) == 2
+    assert tuple(transforms[0][0]["scale"]) == (1, 3, 4)
+    assert tuple(transforms[0][1]["translation"]) == (9000, -1, 1)
