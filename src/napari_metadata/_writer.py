@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, List, Sequence
 
+import numpy as np
 import zarr
 from npe2.types import ArrayLike
 from ome_zarr.io import parse_url
@@ -29,22 +30,26 @@ def write_image(
             {"name": str(i), "type": "space"} for i in range(len(data.shape))
         ]
 
+    name = attributes["name"]
+
+    multiscale_data = data if isinstance(data, Sequence) else [data]
+    scale_factors = [
+        np.divide(multiscale_data[0].shape, d.shape) for d in multiscale_data
+    ]
+
     transforms = [
         [
             {
                 "type": "scale",
-                "scale": attributes["scale"],
+                "scale": tuple(scale_factor * attributes["scale"]),
             },
             {
                 "type": "translation",
                 "translation": attributes["translate"],
             },
         ]
+        for scale_factor in scale_factors
     ]
-
-    name = attributes["name"]
-
-    multiscale_data = data if isinstance(data, Sequence) else [data]
 
     write_multiscale(
         pyramid=multiscale_data,
