@@ -6,10 +6,10 @@ class TimeUnits(Enum):
     """Supported units for a temporal axis."""
 
     NONE = auto()
-    NANOSECONDS = auto()
-    MICROSECONDS = auto()
-    MILLISECONDS = auto()
-    SECONDS = auto()
+    NANOSECOND = auto()
+    MICROSECOND = auto()
+    MILLISECOND = auto()
+    SECOND = auto()
 
     def __str__(self) -> str:
         return self.name.lower()
