@@ -21,9 +21,28 @@ def write_image(
     if extras := attributes.get(EXTRA_METADATA_KEY):
         axes = [axis_to_ome(axis) for axis in extras.axes]
     else:
+        # Ideally we would just provide axis names, but that it not
+        # currently possible:
+        # https://github.com/ome/ome-zarr-py/issues/249
+        # so use space as the most sensible default.
         axes = [
             {"name": str(i), "type": "space"} for i in range(len(data.shape))
         ]
+
+    transforms = [
+        [
+            {
+                "type": "scale",
+                "scale": attributes["scale"],
+            },
+            {
+                "type": "translation",
+                "translation": attributes["translate"],
+            },
+        ]
+    ]
+
+    name = attributes["name"]
 
     multiscale_data = data if isinstance(data, Sequence) else [data]
 
@@ -31,6 +50,8 @@ def write_image(
         pyramid=multiscale_data,
         group=root,
         axes=axes,
+        coordinate_transformations=transforms,
+        name=name,
     )
 
     return [path]
