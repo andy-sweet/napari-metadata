@@ -1,13 +1,7 @@
-import os
 from typing import TYPE_CHECKING, Optional, Tuple
 
-import napari_ome_zarr
-import zarr
-from ome_zarr.io import parse_url
-from ome_zarr.writer import write_image
 from qtpy.QtWidgets import (
     QComboBox,
-    QFileDialog,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -46,24 +40,6 @@ class QMetadataWidget(QWidget):
 
         layout = QVBoxLayout()
         self.setLayout(layout)
-
-        layout.addWidget(QLabel("Open and save a layer with metadata"))
-
-        self._io_widget = QWidget()
-        io_layout = QHBoxLayout()
-        self._io_widget.setLayout(io_layout)
-
-        self._open_button = QPushButton("Open layer")
-        self._open_button.clicked.connect(self._on_open_clicked)
-        io_layout.addWidget(self._open_button)
-
-        self._save_button = QPushButton("Save layer")
-        self._save_button.clicked.connect(self._on_save_clicked)
-        io_layout.addWidget(self._save_button)
-
-        layout.addWidget(self._io_widget)
-
-        layout.addWidget(QLabel("View and edit selected layer metadata"))
 
         self._attribute_widget = QWidget()
         layout.addWidget(self._attribute_widget)
@@ -148,7 +124,7 @@ class QMetadataWidget(QWidget):
                 if isinstance(widget, QLineEdit) and widget.isReadOnly():
                     self._set_attribute_row_visible(row, show_full)
 
-    def _on_name_changed(self):
+    def _on_name_changed(self) -> None:
         if layer := self._get_selected_layer():
             layer.name = self._name.text()
 
@@ -230,67 +206,3 @@ class QMetadataWidget(QWidget):
         if layer := self._get_selected_layer():
             self._data_shape.setText(str(layer.data.shape))
             self._data_type.setText(str(layer.data.dtype))
-
-    def _on_open_clicked(self) -> None:
-        path = QFileDialog.getExistingDirectory(
-            parent=self,
-            caption="Open napari layer with metadata",
-            options=QFileDialog.DontUseNativeDialog,
-        )
-
-        # TODO: understand if path is Optional[str] or str.
-        if path is None or len(path) == 0:
-            return
-
-        # TODO: consider using ome_zarr Reader directly to have more control
-        # here for reading multiple layers.
-        if reader := napari_ome_zarr.napari_get_reader(path):
-            for layer_tuple in reader(path):
-                # TODO: could use public Layer.create, but that requires
-                # importing Layer and explicitly depending on napari.
-                self.viewer._add_layer_from_data(*layer_tuple)
-
-        # Read viewer wide metadata after adding layers so that axis labels
-        # are not trimmed.
-        with zarr.open(path, mode="r") as root:
-            viewer_meta = root["napari"]
-            self.viewer.scale_bar.unit = viewer_meta.attrs["unit"]
-            self.viewer.dims.axis_labels = viewer_meta.attrs["axis_labels"]
-
-    def _on_save_clicked(self) -> None:
-        path, format = QFileDialog.getSaveFileName(
-            parent=self,
-            caption="Save napari layer with metadata",
-            filter="napari layer (*.zarr)",
-            options=QFileDialog.DontUseNativeDialog,
-        )
-        # TODO: understand if path is Optional[str] or str.
-        if path is None or len(path) == 0:
-            return
-
-        # TODO: I thought QFileDialog did this automatically, but maybe not?
-        path = path if path.endswith(".zarr") else path + ".zarr"
-
-        layer = self._get_selected_layer()
-        if layer is None:
-            return
-
-        # From https://ome-zarr.readthedocs.io/en/stable/python.html#writing-ome-ngff-images # noqa
-
-        os.mkdir(path)
-
-        store = parse_url(path, mode="w").store
-        root = zarr.group(store=store)
-
-        viewer_meta = root.create_group("napari")
-        viewer_meta.attrs["unit"] = self.viewer.scale_bar.unit
-        viewer_meta.attrs["axis_labels"] = self.viewer.dims.axis_labels
-
-        # Need noqa because pre-commit wants and doesn't want a space before
-        # the colon.
-        layer_axes = self.viewer.dims.axis_labels[-layer.ndim :]  # noqa
-        write_image(
-            image=layer.data,
-            group=root,
-            axes=layer_axes,
-        )

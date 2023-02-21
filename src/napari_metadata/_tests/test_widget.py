@@ -228,7 +228,7 @@ def test_set_viewer_scale_bar_unit_to_unknown(qtbot: "QtBot"):
     assert space_units_widget.currentText() != "none"
 
     # Supported by pint/napari, but not supported by our widget.
-    viewer.scale_bar.unit = "furlongs"
+    viewer.scale_bar.unit = "furlong"
 
     assert space_units_widget.currentText() == "none"
 
