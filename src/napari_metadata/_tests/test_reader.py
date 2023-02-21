@@ -45,7 +45,7 @@ def test_write_2d_image_with_extras(rng, path):
             SpaceAxis(name="x", unit=SpaceUnits.MILLIMETER),
         ],
     )
-    metadata[EXTRA_METADATA_KEY] = extras
+    metadata["metadata"][EXTRA_METADATA_KEY] = extras
     paths_written = write_image(path, data, metadata)
     assert len(paths_written) == 1
     assert paths_written[0] == path

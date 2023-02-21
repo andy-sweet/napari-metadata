@@ -89,12 +89,13 @@ def test_write_2d_image_with_extras(rng, path):
         translate=(-1, 1),
     )
     data, metadata, _ = image.as_layer_data_tuple()
-    metadata[EXTRA_METADATA_KEY] = ExtraMetadata(
+    extras = ExtraMetadata(
         axes=[
             SpaceAxis(name="y", unit=SpaceUnits.MILLIMETER),
             SpaceAxis(name="x", unit=SpaceUnits.MILLIMETER),
         ],
     )
+    metadata["metadata"][EXTRA_METADATA_KEY] = extras
 
     paths_written = write_image(path, data, metadata)
 
@@ -127,12 +128,13 @@ def test_write_multiscale_2d_image_with_extras(rng, path):
         translate=(-1, 1),
     )
     data, metadata, _ = image.as_layer_data_tuple()
-    metadata[EXTRA_METADATA_KEY] = ExtraMetadata(
+    extras = ExtraMetadata(
         axes=[
             SpaceAxis(name="y", unit=SpaceUnits.MILLIMETER),
             SpaceAxis(name="x", unit=SpaceUnits.MILLIMETER),
         ],
     )
+    metadata["metadata"][EXTRA_METADATA_KEY] = extras
 
     paths_written = write_image(path, data, metadata)
 
@@ -173,13 +175,14 @@ def test_write_3d_image_with_extras(rng, path):
         translate=(9000, -1, 1),
     )
     data, metadata, _ = image.as_layer_data_tuple()
-    metadata[EXTRA_METADATA_KEY] = ExtraMetadata(
+    extras = ExtraMetadata(
         axes=[
             TimeAxis(name="t", unit=TimeUnits.SECOND),
             SpaceAxis(name="y", unit=SpaceUnits.MILLIMETER),
             SpaceAxis(name="x", unit=SpaceUnits.MILLIMETER),
         ],
     )
+    metadata["metadata"][EXTRA_METADATA_KEY] = extras
 
     paths_written = write_image(path, data, metadata)
 
