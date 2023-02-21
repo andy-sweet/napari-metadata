@@ -61,7 +61,7 @@ def read_ome_zarr(path: PathLike) -> List[LayerData]:
         for a in node.metadata["axes"]:
             name = a["name"]
             unit = a.get("unit", "none")
-            # TODO: support channel axes properly.
+            # TODO: support channel axes.
             if a["type"] == "time":
                 axis = TimeAxis(name=name, unit=TimeUnits.from_name(unit))
             else:
@@ -72,6 +72,6 @@ def read_ome_zarr(path: PathLike) -> List[LayerData]:
             EXTRA_METADATA_KEY: ExtraMetadata(axes=axes),
         }
 
-        results.append((data, metadata, "Image"))
+        results.append((data, metadata, "image"))
 
         return results
