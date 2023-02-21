@@ -4,6 +4,10 @@ import numpy as np
 from napari.components import ViewerModel
 
 from napari_metadata import QMetadataWidget
+from napari_metadata._model import (
+    get_layer_axis_names,
+    get_layer_axis_unit_names,
+)
 
 if TYPE_CHECKING:
     from pytestqt.qtbot import QtBot
@@ -152,37 +156,46 @@ def test_remove_only_3d_image(qtbot: "QtBot"):
 def test_set_axis_name(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     first_axis_widget = widget._axes_widget.axis_widgets()[0]
+    layer = viewer.layers[0]
     new_name = "y"
     assert first_axis_widget.name.text() != new_name
+    assert get_layer_axis_names(layer)[0] != new_name
     assert viewer.dims.axis_labels[0] != new_name
 
     first_axis_widget.name.setText(new_name)
 
     assert viewer.dims.axis_labels[0] == new_name
+    assert get_layer_axis_names(layer)[0] == new_name
 
 
 def test_set_viewer_axis_label(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     first_axis_widget = widget._axes_widget.axis_widgets()[0]
+    layer = viewer.layers[0]
     new_name = "y"
     assert viewer.dims.axis_labels[0] != new_name
+    assert get_layer_axis_names(layer)[0] != new_name
     assert first_axis_widget.name.text() != new_name
 
     viewer.dims.axis_labels = [new_name, viewer.dims.axis_labels[1]]
 
     assert first_axis_widget.name.text() == new_name
+    assert get_layer_axis_names(layer)[0] == new_name
 
 
 def test_set_space_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     space_units_widget = widget._spatial_units
+    layer = viewer.layers[0]
     new_unit = "millimeters"
     assert space_units_widget.currentText() != new_unit
+    assert get_layer_axis_unit_names(layer)[0] != new_unit
     assert viewer.scale_bar.unit != new_unit
 
     space_units_widget.setCurrentText(new_unit)
 
     assert viewer.scale_bar.unit == new_unit
+    assert get_layer_axis_unit_names(layer)[0] == new_unit
 
 
 def test_set_viewer_scale_bar_unit(qtbot: "QtBot"):
@@ -229,6 +242,21 @@ def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot: "QtBot"):
     viewer.scale_bar.unit = "mm"
 
     assert space_units_widget.currentText() == "millimeters"
+
+
+def test_set_time_unit(qtbot: "QtBot"):
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
+    time_units_widget = widget._temporal_units
+    name_type_widget = widget._axes_widget.axis_widgets()[0]
+    name_type_widget.type.setCurrentText("time")
+    layer = viewer.layers[0]
+    new_unit = "milliseconds"
+    assert time_units_widget.currentText() != new_unit
+    assert get_layer_axis_unit_names(layer)[0] != new_unit
+
+    time_units_widget.setCurrentText(new_unit)
+
+    assert get_layer_axis_unit_names(layer)[0] == new_unit
 
 
 def test_set_layer_scale(qtbot: "QtBot"):

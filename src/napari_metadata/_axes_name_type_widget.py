@@ -10,6 +10,14 @@ from qtpy.QtWidgets import (
 )
 
 from napari_metadata._axis_type import AxisType
+from napari_metadata._model import (
+    Axis,
+    ChannelAxis,
+    SpaceAxis,
+    TimeAxis,
+    get_layer_extra_metadata,
+    set_layer_axis_names,
+)
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -30,6 +38,14 @@ class AxisNameTypeWidget(QWidget):
         layout.addWidget(self.name)
         layout.addWidget(self.type)
         self.setLayout(layout)
+
+    def to_axis(self) -> Axis:
+        axis_type = self.type.currentText()
+        if axis_type == "channel":
+            return ChannelAxis(name=self.name.text())
+        elif axis_type == "time":
+            return TimeAxis(name=self.name.text())
+        return SpaceAxis(name=self.name.text())
 
 
 class AxesNameTypeWidget(QWidget):
@@ -72,6 +88,7 @@ class AxesNameTypeWidget(QWidget):
     def _make_axis_widget(self) -> AxisNameTypeWidget:
         widget = AxisNameTypeWidget(self)
         widget.name.textChanged.connect(self._on_axis_name_changed)
+        widget.type.currentTextChanged.connect(self._on_axis_type_changed)
         return widget
 
     def _on_viewer_dims_axis_labels_changed(self, event) -> None:
@@ -82,6 +99,11 @@ class AxesNameTypeWidget(QWidget):
         assert len(names) == len(widgets)
         for name, widget in zip(names, widgets):
             widget.name.setText(name)
+        for layer in self._viewer.layers:
+            layer_axis_names = self._viewer.dims.axis_labels[
+                -layer.ndim :  # noqa
+            ]
+            set_layer_axis_names(layer, layer_axis_names)
 
     def axis_widgets(self) -> Tuple[AxisNameTypeWidget, ...]:
         layout = self.layout()
@@ -95,3 +117,13 @@ class AxesNameTypeWidget(QWidget):
 
     def _on_axis_name_changed(self) -> None:
         self._viewer.dims.axis_labels = self.axis_names()
+
+    def _on_axis_type_changed(self) -> None:
+        axis_widgets = self.axis_widgets()
+        ndim = len(axis_widgets)
+        for layer in self._viewer.layers:
+            if extras := get_layer_extra_metadata(layer):
+                for i in range(layer.ndim):
+                    extras.axes[i] = axis_widgets[
+                        i + ndim - layer.ndim
+                    ].to_axis()
