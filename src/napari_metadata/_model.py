@@ -76,6 +76,20 @@ def get_layer_extra_metadata(layer: "Layer") -> Optional[ExtraMetadata]:
     return layer.metadata.get(EXTRA_METADATA_KEY)
 
 
+def get_layer_axes(layer: "Layer") -> Tuple[Axis, ...]:
+    extra_metadata = get_layer_extra_metadata(layer)
+    if extra_metadata is None:
+        return ()
+    return tuple(extra_metadata.axes)
+
+
+def get_layer_axis_types(layer: "Layer") -> Tuple[AxisType, ...]:
+    extra_metadata = get_layer_extra_metadata(layer)
+    if extra_metadata is None:
+        return ()
+    return tuple(axis.get_type() for axis in extra_metadata.axes)
+
+
 def get_layer_axis_names(layer: "Layer") -> Tuple[str, ...]:
     extra_metadata = get_layer_extra_metadata(layer)
     if extra_metadata is None:

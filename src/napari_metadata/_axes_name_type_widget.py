@@ -15,6 +15,7 @@ from napari_metadata._model import (
     ChannelAxis,
     SpaceAxis,
     TimeAxis,
+    get_layer_axes,
     get_layer_axis_names,
     get_layer_extra_metadata,
     set_layer_axis_names,
@@ -80,8 +81,13 @@ class AxesNameTypeWidget(QWidget):
                 dims.axis_labels = names
         layer_ndim = 0 if layer is None else layer.ndim
         ndim_diff = dims.ndim - layer_ndim
+        # TODO: clean up this giant mess.
+        axes = get_layer_axes(layer) if layer is not None else ()
         for i, widget in enumerate(self.axis_widgets()):
             widget.setVisible(i >= ndim_diff)
+            if layer is not None and i >= ndim_diff:
+                axis = axes[i - ndim_diff]
+                widget.type.setCurrentText(str(axis.get_type()))
 
     def _get_layer_axis_names(self, layer: "Layer") -> Tuple[str, ...]:
         viewer_names = list(self._viewer.dims.axis_labels)
