@@ -15,6 +15,7 @@ from napari_metadata._model import (
     ChannelAxis,
     SpaceAxis,
     TimeAxis,
+    get_layer_axis_names,
     get_layer_extra_metadata,
     set_layer_axis_names,
 )
@@ -68,11 +69,25 @@ class AxesNameTypeWidget(QWidget):
     def set_selected_layer(self, layer: Optional["Layer"]) -> None:
         dims = self._viewer.dims
         self._update_num_axes(dims.ndim)
-        self._set_axis_names(dims.axis_labels)
+        if layer is not None:
+            names = self._get_layer_axis_names(layer)
+            # TODO: given the current we always need the event to be emitted,
+            # to be sure that the widgets get some values, but this a giant
+            # code smell.
+            if dims.axis_labels == names:
+                dims.events.axis_labels()
+            else:
+                dims.axis_labels = names
         layer_ndim = 0 if layer is None else layer.ndim
         ndim_diff = dims.ndim - layer_ndim
         for i, widget in enumerate(self.axis_widgets()):
             widget.setVisible(i >= ndim_diff)
+
+    def _get_layer_axis_names(self, layer: "Layer") -> Tuple[str, ...]:
+        viewer_names = list(self._viewer.dims.axis_labels)
+        layer_names = get_layer_axis_names(layer)
+        viewer_names[-layer.ndim :] = layer_names  # noqa
+        return tuple(viewer_names)
 
     def _update_num_axes(self, num_axes: int) -> None:
         num_widgets: int = self.layout().count()
@@ -91,8 +106,8 @@ class AxesNameTypeWidget(QWidget):
         widget.type.currentTextChanged.connect(self._on_axis_type_changed)
         return widget
 
-    def _on_viewer_dims_axis_labels_changed(self, event) -> None:
-        self._set_axis_names(event.value)
+    def _on_viewer_dims_axis_labels_changed(self) -> None:
+        self._set_axis_names(self._viewer.dims.axis_labels)
 
     def _set_axis_names(self, names: Tuple[str, ...]) -> None:
         widgets = self.axis_widgets()

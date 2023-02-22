@@ -162,7 +162,7 @@ class QMetadataWidget(QWidget):
                 self._on_selected_layer_data_changed
             )
 
-        layer = coerce_layer_extra_metadata(layer)
+        layer = coerce_layer_extra_metadata(self.viewer, layer)
 
         if layer is not None:
             self._name.setText(layer.name)

@@ -2,9 +2,14 @@ from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
 from napari.components import ViewerModel
+from napari.layers import Image
 
 from napari_metadata import QMetadataWidget
 from napari_metadata._model import (
+    EXTRA_METADATA_KEY,
+    ExtraMetadata,
+    SpaceAxis,
+    SpaceUnits,
     get_layer_axis_names,
     get_layer_axis_unit_names,
 )
@@ -19,7 +24,6 @@ def test_init_with_no_layers(qtbot: "QtBot"):
 
     widget = make_metadata_widget(qtbot, viewer)
 
-    assert axis_names(widget) == ("0", "1")
     assert are_axis_widgets_visible(widget) == (False, False)
 
 
@@ -149,7 +153,6 @@ def test_remove_only_3d_image(qtbot: "QtBot"):
     viewer.layers.pop()
 
     assert viewer.layers.selection == set()
-    assert axis_names(widget) == ("1", "2")
     assert are_axis_widgets_visible(widget) == (False, False)
 
 
@@ -281,6 +284,27 @@ def test_set_pixel_size(qtbot: "QtBot"):
     pixel_width_widget.setValue(4.5)
 
     assert layer.scale[0] == 4.5
+
+
+def test_add_image_with_existing_metadata(qtbot: "QtBot"):
+    viewer = ViewerModel()
+    # Need reference to widget to keep it alive.
+    widget = make_metadata_widget(qtbot, viewer)  # noqa
+    image = Image(np.zeros((5, 6)))
+    axes = [
+        SpaceAxis(name="y", unit=SpaceUnits.MILLIMETER),
+        SpaceAxis(name="x", unit=SpaceUnits.MILLIMETER),
+    ]
+
+    image.metadata[EXTRA_METADATA_KEY] = ExtraMetadata(axes=axes)
+    assert viewer.dims.axis_labels != ("y", "x")
+
+    viewer.add_layer(image)
+
+    axes_after = image.metadata[EXTRA_METADATA_KEY].axes
+    assert axes_after[0].name == "y"
+    assert axes_after[1].name == "x"
+    assert viewer.dims.axis_labels == ("y", "x")
 
 
 def axis_names(widget: QMetadataWidget) -> Tuple[str, ...]:

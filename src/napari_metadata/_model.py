@@ -13,6 +13,7 @@ from ._space_units import SpaceUnits
 from ._time_units import TimeUnits
 
 if TYPE_CHECKING:
+    from napari.components import ViewerModel
     from napari.layers import Layer
 
 
@@ -70,12 +71,6 @@ class ExtraMetadata:
     axes: List[Axis]
     experiment_id: str = ""
 
-    @classmethod
-    def from_layer(cls, layer: "Layer") -> "ExtraMetadata":
-        return ExtraMetadata(
-            axes=[SpaceAxis(name=str(i)) for i in range(layer.ndim)],
-        )
-
 
 def get_layer_extra_metadata(layer: "Layer") -> Optional[ExtraMetadata]:
     return layer.metadata.get(EXTRA_METADATA_KEY)
@@ -127,12 +122,18 @@ def set_layer_time_unit(layer: "Layer", unit: TimeUnits) -> None:
             axis.unit = unit
 
 
-def coerce_layer_extra_metadata(layer: Optional["Layer"]) -> Optional["Layer"]:
+def coerce_layer_extra_metadata(
+    viewer: "ViewerModel", layer: Optional["Layer"]
+) -> Optional["Layer"]:
     if layer is None:
         return None
     if EXTRA_METADATA_KEY in layer.metadata:
         if not isinstance(layer.metadata[EXTRA_METADATA_KEY], ExtraMetadata):
             return None
     else:
-        layer.metadata[EXTRA_METADATA_KEY] = ExtraMetadata.from_layer(layer)
+        axes = [
+            SpaceAxis(name=name)
+            for name in viewer.dims.axis_labels[-layer.ndim :]  # noqa
+        ]
+        layer.metadata[EXTRA_METADATA_KEY] = ExtraMetadata(axes=axes)
     return layer
