@@ -68,6 +68,19 @@ def read_ome_zarr(path: PathLike) -> List[LayerData]:
                 axis = SpaceAxis(name=name, unit=SpaceUnits.from_name(unit))
             axes.append(axis)
 
+        space_axes = tuple(
+            axis for axis in axes if isinstance(axis, SpaceAxis)
+        )
+        space_units = {axis.get_unit_name() for axis in space_axes}
+        if len(space_units) > 1:
+            warnings.warn(
+                f"Found mixed spatial units: {space_units}"
+                "Using none for all.",
+                UserWarning,
+            )
+            for axis in space_axes:
+                axis.unit = SpaceUnits.NONE
+
         metadata["metadata"] = {
             EXTRA_METADATA_KEY: ExtraMetadata(axes=axes),
         }

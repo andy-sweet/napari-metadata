@@ -145,3 +145,24 @@ def test_read_3d_image_with_extras(rng, path):
     assert read_extras.axes[0] == extras.axes[0]
     assert read_extras.axes[1] == extras.axes[1]
     assert read_extras.axes[2] == extras.axes[2]
+
+
+def test_read_2d_image_with_mixed_space_units(rng, path):
+    image = Image(np.zeros((5, 6)))
+    data, metadata, _ = image.as_layer_data_tuple()
+    extras = ExtraMetadata(
+        axes=[
+            SpaceAxis(name="y", unit=SpaceUnits.MILLIMETER),
+            SpaceAxis(name="x", unit=SpaceUnits.METER),
+        ],
+    )
+    metadata["metadata"][EXTRA_METADATA_KEY] = extras
+    write_image(path, data, metadata)
+
+    with pytest.warns(UserWarning):
+        read_layers = read_ome_zarr(path)
+    _, read_metadata, _ = read_layers[0]
+
+    read_extras: ExtraMetadata = read_metadata["metadata"][EXTRA_METADATA_KEY]
+    assert read_extras.axes[0] == SpaceAxis(name="y", unit=SpaceUnits.NONE)
+    assert read_extras.axes[1] == SpaceAxis(name="x", unit=SpaceUnits.NONE)
