@@ -315,6 +315,9 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
 
     image.metadata[EXTRA_METADATA_KEY] = ExtraMetadata(axes=axes)
     assert viewer.dims.axis_labels != ("t", "y", "x")
+    assert viewer.scale_bar.unit is None
+    assert widget._spatial_units.currentText() != "millimeter"
+    assert widget._temporal_units.currentText() != "second"
 
     viewer.add_layer(image)
 
@@ -333,6 +336,13 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
         for w in widget._axes_widget.axis_widgets()
     )
     assert widget_axis_types == (AxisType.TIME, AxisType.SPACE, AxisType.SPACE)
+
+    assert axes_after[0].get_unit_name() == "second"
+    assert axes_after[1].get_unit_name() == "millimeter"
+    assert axes_after[2].get_unit_name() == "millimeter"
+    assert viewer.scale_bar.unit == "millimeter"
+    assert widget._spatial_units.currentText() == "millimeter"
+    assert widget._temporal_units.currentText() == "second"
 
 
 def axis_names(widget: QMetadataWidget) -> Tuple[str, ...]:

@@ -104,6 +104,34 @@ def get_layer_axis_unit_names(layer: "Layer") -> Tuple[str, ...]:
     return tuple(axis.get_unit_name() for axis in extra_metadata.axes)
 
 
+def get_layer_space_unit(layer: "Layer") -> SpaceUnits:
+    space_axis_units = tuple(
+        axis.unit
+        for axis in get_layer_axes(layer)
+        if isinstance(axis, SpaceAxis)
+    )
+    return (
+        space_axis_units[0]
+        if len(set(space_axis_units)) == 1
+        else SpaceUnits.NONE
+    )
+
+
+# TODO: implementaton is almost the same as space, so refactor
+# or overload/template the typing.
+def get_layer_time_unit(layer: "Layer") -> TimeUnits:
+    time_axis_units = tuple(
+        axis.unit
+        for axis in get_layer_axes(layer)
+        if isinstance(axis, TimeAxis)
+    )
+    return (
+        time_axis_units[0]
+        if len(set(time_axis_units)) == 1
+        else TimeUnits.NONE
+    )
+
+
 def set_layer_axes(layer: "Layer", axes: Tuple[Axis, ...]) -> None:
     layer.metadata[EXTRA_METADATA_KEY].axes = axes
 

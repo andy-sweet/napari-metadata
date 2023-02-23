@@ -18,8 +18,12 @@ from napari_metadata._model import (
     get_layer_axes,
     get_layer_axis_names,
     get_layer_extra_metadata,
+    get_layer_space_unit,
+    get_layer_time_unit,
     set_layer_axis_names,
 )
+from napari_metadata._space_units import SpaceUnits
+from napari_metadata._time_units import TimeUnits
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -41,13 +45,18 @@ class AxisNameTypeWidget(QWidget):
         layout.addWidget(self.type)
         self.setLayout(layout)
 
-    def to_axis(self) -> Axis:
+    def to_axis(
+        self,
+        *,
+        space_unit: SpaceUnits = SpaceUnits.NONE,
+        time_unit: TimeUnits = TimeUnits.NONE,
+    ) -> Axis:
         axis_type = self.type.currentText()
         if axis_type == "channel":
             return ChannelAxis(name=self.name.text())
         elif axis_type == "time":
-            return TimeAxis(name=self.name.text())
-        return SpaceAxis(name=self.name.text())
+            return TimeAxis(name=self.name.text(), unit=time_unit)
+        return SpaceAxis(name=self.name.text(), unit=space_unit)
 
 
 class AxesNameTypeWidget(QWidget):
@@ -143,8 +152,12 @@ class AxesNameTypeWidget(QWidget):
         axis_widgets = self.axis_widgets()
         ndim = len(axis_widgets)
         for layer in self._viewer.layers:
+            space_unit = get_layer_space_unit(layer)
+            time_unit = get_layer_time_unit(layer)
             if extras := get_layer_extra_metadata(layer):
                 for i in range(layer.ndim):
-                    extras.axes[i] = axis_widgets[
-                        i + ndim - layer.ndim
-                    ].to_axis()
+                    widget = axis_widgets[i + ndim - layer.ndim]
+                    extras.axes[i] = widget.to_axis(
+                        space_unit=space_unit,
+                        time_unit=time_unit,
+                    )
