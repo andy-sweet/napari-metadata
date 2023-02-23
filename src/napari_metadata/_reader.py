@@ -74,8 +74,8 @@ def read_ome_zarr(path: PathLike) -> List[LayerData]:
         space_units = {axis.get_unit_name() for axis in space_axes}
         if len(space_units) > 1:
             warnings.warn(
-                f"Found mixed spatial units: {space_units}"
-                "Using none for all.",
+                f"Found mixed spatial units: {space_units}. "
+                "Using none for all instead.",
                 UserWarning,
             )
             for axis in space_axes:
