@@ -44,6 +44,9 @@ class QMetadataWidget(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
+        self._info_label = QLabel("Select a single layer to view its metadata")
+        layout.addWidget(self._info_label)
+
         self._attribute_widget = QWidget()
         layout.addWidget(self._attribute_widget)
 
@@ -82,27 +85,36 @@ class QMetadataWidget(QWidget):
         restore_layout = QHBoxLayout()
         restore_layout.addStretch(1)
         self._restore_defaults = QPushButton("Restore defaults")
+        self._restore_defaults.setStyleSheet(
+            "QPushButton {" "color: #898D93;" "background: transparent;" "}"
+        )
         self._restore_defaults.clicked.connect(self._on_restore_clicked)
         restore_layout.addWidget(self._restore_defaults)
         layout.addLayout(restore_layout)
 
+        # Push control widget to bottom.
         layout.addStretch(1)
 
-        view_controls = QHBoxLayout()
+        self._control_widget = QWidget()
+        control_layout = QHBoxLayout()
+        self._control_widget.setLayout(control_layout)
         self._show_full = QPushButton()
         self._show_full.setChecked(False)
         self._show_full.setCheckable(True)
+        self._show_full.setStyleSheet(
+            "QPushButton {" "color: #66C1FF;" "background: transparent;" "}"
+        )
         self._show_full.toggled.connect(self._on_show_full_toggled)
 
-        view_controls.addWidget(self._show_full)
-        view_controls.addStretch(1)
+        control_layout.addWidget(self._show_full)
+        control_layout.addStretch(1)
         self._close_button = QPushButton()
         # TODO: dock widget should be closed when clicked.
-        view_controls.addWidget(self._close_button)
+        control_layout.addWidget(self._close_button)
 
         self._on_show_full_toggled()
 
-        layout.addLayout(view_controls)
+        layout.addWidget(self._control_widget)
 
         self._on_selected_layers_changed()
 
@@ -150,6 +162,7 @@ class QMetadataWidget(QWidget):
                 widget = item.widget()
                 if isinstance(widget, QLineEdit) and widget.isReadOnly():
                     self._set_attribute_row_visible(row, show_full)
+                widget.setEnabled(not show_full)
 
     def _on_name_changed(self) -> None:
         if layer := self._get_selected_layer():
@@ -175,12 +188,16 @@ class QMetadataWidget(QWidget):
     def _on_selected_layers_changed(self) -> None:
         layer = self._get_selected_layer()
 
+        self._info_label.setVisible(layer is None)
+        self._attribute_widget.setVisible(layer is not None)
+        self._control_widget.setVisible(layer is not None)
+
+        # This can occur when there is no selected layer at initialization,
+        # so some things must be done before this (e.g. changing visibility
+        # of certain widgets).
         if layer == self._selected_layer:
-            # TODO: check if this can actually occur.
             return
 
-        # TODO: declare dependency between metadata attribute and layer state
-        # to make connections more automatic.
         if self._selected_layer is not None:
             self._selected_layer.events.name.disconnect(
                 self._on_selected_layer_name_changed
@@ -200,10 +217,6 @@ class QMetadataWidget(QWidget):
 
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.data.connect(self._on_selected_layer_data_changed)
-
-            self._attribute_widget.show()
-        else:
-            self._attribute_widget.hide()
 
         self._spatial_units.set_selected_layer(layer)
         self._axes_widget.set_selected_layer(layer)
