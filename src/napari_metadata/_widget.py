@@ -124,6 +124,7 @@ class QMetadataWidget(QWidget):
                 widget = item.widget()
                 if isinstance(widget, QLineEdit) and widget.isReadOnly():
                     self._set_attribute_row_visible(row, show_full)
+                widget.setEnabled(not show_full)
 
     def _on_name_changed(self) -> None:
         if layer := self._get_selected_layer():
