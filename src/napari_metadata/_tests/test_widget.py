@@ -5,6 +5,11 @@ from napari.components import ViewerModel
 
 from napari_metadata import QMetadataWidget
 from napari_metadata._model import (
+    EXTRA_METADATA_KEY,
+    ExtraMetadata,
+    OriginalMetadata,
+    SpaceAxis,
+    SpaceUnits,
     get_layer_axis_names,
     get_layer_axis_unit_names,
 )
@@ -281,6 +286,29 @@ def test_set_pixel_size(qtbot: "QtBot"):
     pixel_width_widget.setValue(4.5)
 
     assert layer.scale[0] == 4.5
+
+
+def test_restore_defaults(qtbot: "QtBot"):
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
+    layer = viewer.layers[0]
+    metadata: ExtraMetadata = layer.metadata[EXTRA_METADATA_KEY]
+    metadata.original = OriginalMetadata(
+        axes=(
+            SpaceAxis(name="v", unit=SpaceUnits.CENTIMETER),
+            SpaceAxis(name="u", unit=SpaceUnits.CENTIMETER),
+        ),
+        name="kermit",
+        scale=(2, 3),
+    )
+    assert layer.name != metadata.original.name
+    assert tuple(layer.scale) != metadata.original.scale
+    assert tuple(metadata.axes) != metadata.original.axes
+
+    widget._restore_defaults.click()
+
+    assert layer.name == metadata.original.name
+    assert tuple(layer.scale) == metadata.original.scale
+    assert tuple(metadata.axes) == metadata.original.axes
 
 
 def axis_names(widget: QMetadataWidget) -> Tuple[str, ...]:

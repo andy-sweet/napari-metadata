@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from qtpy.QtWidgets import (
@@ -14,6 +15,8 @@ from qtpy.QtWidgets import (
 from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
 from napari_metadata._axes_spacing_widget import AxesSpacingWidget
 from napari_metadata._model import (
+    EXTRA_METADATA_KEY,
+    ExtraMetadata,
     coerce_layer_extra_metadata,
     set_layer_axis_names,
     set_layer_space_unit,
@@ -45,6 +48,7 @@ class QMetadataWidget(QWidget):
         layout.addWidget(self._attribute_widget)
 
         self._attribute_layout = QGridLayout()
+        self._attribute_layout.setContentsMargins(0, 0, 0, 0)
         self._attribute_widget.setLayout(self._attribute_layout)
 
         self._name = QLineEdit()
@@ -75,6 +79,13 @@ class QMetadataWidget(QWidget):
             self._update_all_layers_extra_metadata
         )
 
+        restore_layout = QHBoxLayout()
+        restore_layout.addStretch(1)
+        self._restore_defaults = QPushButton("Restore defaults")
+        self._restore_defaults.clicked.connect(self._on_restore_clicked)
+        restore_layout.addWidget(self._restore_defaults)
+        layout.addLayout(restore_layout)
+
         layout.addStretch(1)
 
         view_controls = QHBoxLayout()
@@ -94,6 +105,15 @@ class QMetadataWidget(QWidget):
         layout.addLayout(view_controls)
 
         self._on_selected_layers_changed()
+
+    def _on_restore_clicked(self) -> None:
+        if layer := self._get_selected_layer():
+            metadata: ExtraMetadata = layer.metadata[EXTRA_METADATA_KEY]
+            if original := metadata.original:
+                metadata.axes = list(deepcopy(original.axes))
+                layer.name = original.name
+                layer.scale = original.scale
+                self._axes_widget.set_selected_layer(layer)
 
     def _update_all_layers_extra_metadata(self) -> None:
         space_unit = SpaceUnits.from_name(self._spatial_units.currentText())

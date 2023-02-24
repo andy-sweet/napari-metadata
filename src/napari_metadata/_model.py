@@ -1,3 +1,4 @@
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
@@ -66,14 +67,28 @@ EXTRA_METADATA_KEY = "napari-metadata-plugin"
 
 
 @dataclass
+class OriginalMetadata:
+    axes: Tuple[Axis]
+    name: Optional[str]
+    scale: Optional[Tuple[float, ...]]
+
+
+@dataclass
 class ExtraMetadata:
     axes: List[Axis]
-    experiment_id: str = ""
+    original: Optional[OriginalMetadata] = None
 
     @classmethod
     def from_layer(cls, layer: "Layer") -> "ExtraMetadata":
+        axes = [SpaceAxis(name=str(i)) for i in range(layer.ndim)]
+        original = OriginalMetadata(
+            axes=tuple(deepcopy(axes)),
+            name=layer.name,
+            scale=tuple(layer.scale),
+        )
         return ExtraMetadata(
-            axes=[SpaceAxis(name=str(i)) for i in range(layer.ndim)],
+            axes=axes,
+            original=original,
         )
 
 
