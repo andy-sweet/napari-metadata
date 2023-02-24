@@ -70,8 +70,8 @@ class AxesSpacingWidget(QWidget):
         if self._layer is not None:
             self._on_layer_scale_changed()
 
-    def _on_viewer_dims_axis_labels_changed(self, event) -> None:
-        self._set_axis_names(event.value)
+    def _on_viewer_dims_axis_labels_changed(self) -> None:
+        self._set_axis_names(self._viewer.dims.axis_labels)
 
     def _set_axis_names(self, names: Tuple[str, ...]) -> None:
         widgets = self._axis_widgets()

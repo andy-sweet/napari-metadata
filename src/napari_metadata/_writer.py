@@ -19,7 +19,7 @@ def write_image(
     store = parse_url(path, mode="w").store
     root = zarr.group(store=store)
 
-    if extras := attributes.get(EXTRA_METADATA_KEY):
+    if extras := attributes["metadata"].get(EXTRA_METADATA_KEY):
         axes = [axis_to_ome(axis) for axis in extras.axes]
     else:
         # Ideally we would just provide axis names, but that it not

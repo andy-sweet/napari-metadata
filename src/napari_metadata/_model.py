@@ -14,6 +14,7 @@ from ._space_units import SpaceUnits
 from ._time_units import TimeUnits
 
 if TYPE_CHECKING:
+    from napari.components import ViewerModel
     from napari.layers import Layer
 
 
@@ -78,22 +79,23 @@ class ExtraMetadata:
     axes: List[Axis]
     original: Optional[OriginalMetadata] = None
 
-    @classmethod
-    def from_layer(cls, layer: "Layer") -> "ExtraMetadata":
-        axes = [SpaceAxis(name=str(i)) for i in range(layer.ndim)]
-        original = OriginalMetadata(
-            axes=tuple(deepcopy(axes)),
-            name=layer.name,
-            scale=tuple(layer.scale),
-        )
-        return ExtraMetadata(
-            axes=axes,
-            original=original,
-        )
-
 
 def get_layer_extra_metadata(layer: "Layer") -> Optional[ExtraMetadata]:
     return layer.metadata.get(EXTRA_METADATA_KEY)
+
+
+def get_layer_axes(layer: "Layer") -> Tuple[Axis, ...]:
+    extra_metadata = get_layer_extra_metadata(layer)
+    if extra_metadata is None:
+        return ()
+    return tuple(extra_metadata.axes)
+
+
+def get_layer_axis_types(layer: "Layer") -> Tuple[AxisType, ...]:
+    extra_metadata = get_layer_extra_metadata(layer)
+    if extra_metadata is None:
+        return ()
+    return tuple(axis.get_type() for axis in extra_metadata.axes)
 
 
 def get_layer_axis_names(layer: "Layer") -> Tuple[str, ...]:
@@ -108,6 +110,34 @@ def get_layer_axis_unit_names(layer: "Layer") -> Tuple[str, ...]:
     if extra_metadata is None:
         return ()
     return tuple(axis.get_unit_name() for axis in extra_metadata.axes)
+
+
+def get_layer_space_unit(layer: "Layer") -> SpaceUnits:
+    space_axis_units = tuple(
+        axis.unit
+        for axis in get_layer_axes(layer)
+        if isinstance(axis, SpaceAxis)
+    )
+    return (
+        space_axis_units[0]
+        if len(set(space_axis_units)) == 1
+        else SpaceUnits.NONE
+    )
+
+
+# TODO: implementaton is almost the same as space, so refactor
+# or overload/template the typing.
+def get_layer_time_unit(layer: "Layer") -> TimeUnits:
+    time_axis_units = tuple(
+        axis.unit
+        for axis in get_layer_axes(layer)
+        if isinstance(axis, TimeAxis)
+    )
+    return (
+        time_axis_units[0]
+        if len(set(time_axis_units)) == 1
+        else TimeUnits.NONE
+    )
 
 
 def set_layer_axes(layer: "Layer", axes: Tuple[Axis, ...]) -> None:
@@ -142,12 +172,26 @@ def set_layer_time_unit(layer: "Layer", unit: TimeUnits) -> None:
             axis.unit = unit
 
 
-def coerce_layer_extra_metadata(layer: Optional["Layer"]) -> Optional["Layer"]:
+def coerce_layer_extra_metadata(
+    viewer: "ViewerModel", layer: Optional["Layer"]
+) -> Optional["Layer"]:
     if layer is None:
         return None
     if EXTRA_METADATA_KEY in layer.metadata:
         if not isinstance(layer.metadata[EXTRA_METADATA_KEY], ExtraMetadata):
             return None
     else:
-        layer.metadata[EXTRA_METADATA_KEY] = ExtraMetadata.from_layer(layer)
+        axes = [
+            SpaceAxis(name=name)
+            for name in viewer.dims.axis_labels[-layer.ndim :]  # noqa
+        ]
+        original = OriginalMetadata(
+            axes=tuple(deepcopy(axes)),
+            name=layer.name,
+            scale=tuple(layer.scale),
+        )
+        layer.metadata[EXTRA_METADATA_KEY] = ExtraMetadata(
+            axes=axes,
+            original=original,
+        )
     return layer
