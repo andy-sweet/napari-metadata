@@ -11,6 +11,9 @@ contributions:
     - id: napari-metadata.make_metadata_qwidget
       python_name: napari_metadata._widget:QMetadataWidget
       title: Make metadata Qt widget
+    - id: napari-metadata.read_image
+      python_name: napari_metadata._reader:napari_get_reader
+      title: Read image with metadata
     - id: napari-metadata.write_image
       python_name: napari_metadata._writer:write_image
       title: Write image with metadata
@@ -21,6 +24,11 @@ contributions:
     - command: napari-metadata.make_nuclei_md_sample_data
       display_name: Nuclei mixed-D
       key: nuclei-md
+  readers:
+    - command: napari-metadata.read_image
+      filename_patterns:
+      - '*.zarr'
+      accepts_directories: true
   widgets:
     - command: napari-metadata.make_metadata_qwidget
       display_name: Layer metadata

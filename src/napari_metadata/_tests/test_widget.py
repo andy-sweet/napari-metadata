@@ -2,10 +2,19 @@ from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
 from napari.components import ViewerModel
+from napari.layers import Image
 
 from napari_metadata import QMetadataWidget
+from napari_metadata._axis_type import AxisType
 from napari_metadata._model import (
+    EXTRA_METADATA_KEY,
+    ExtraMetadata,
+    SpaceAxis,
+    SpaceUnits,
+    TimeAxis,
+    TimeUnits,
     get_layer_axis_names,
+    get_layer_axis_types,
     get_layer_axis_unit_names,
 )
 
@@ -19,7 +28,6 @@ def test_init_with_no_layers(qtbot: "QtBot"):
 
     widget = make_metadata_widget(qtbot, viewer)
 
-    assert axis_names(widget) == ("0", "1")
     assert are_axis_widgets_visible(widget) == (False, False)
 
 
@@ -149,7 +157,6 @@ def test_remove_only_3d_image(qtbot: "QtBot"):
     viewer.layers.pop()
 
     assert viewer.layers.selection == set()
-    assert axis_names(widget) == ("1", "2")
     assert are_axis_widgets_visible(widget) == (False, False)
 
 
@@ -166,6 +173,19 @@ def test_set_axis_name(qtbot: "QtBot"):
 
     assert viewer.dims.axis_labels[0] == new_name
     assert get_layer_axis_names(layer)[0] == new_name
+
+
+def test_set_axis_type(qtbot: "QtBot"):
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
+    first_axis_widget = widget._axes_widget.axis_widgets()[0]
+    layer = viewer.layers[0]
+    new_type = AxisType.CHANNEL
+    assert first_axis_widget.name.text() != str(new_type)
+    assert get_layer_axis_types(layer)[0] != new_type
+
+    first_axis_widget.type.setCurrentText(str(new_type))
+
+    assert get_layer_axis_types(layer)[0] == new_type
 
 
 def test_set_viewer_axis_label(qtbot: "QtBot"):
@@ -281,6 +301,48 @@ def test_set_pixel_size(qtbot: "QtBot"):
     pixel_width_widget.setValue(4.5)
 
     assert layer.scale[0] == 4.5
+
+
+def test_add_image_with_existing_metadata(qtbot: "QtBot"):
+    viewer = ViewerModel()
+    widget = make_metadata_widget(qtbot, viewer)
+    image = Image(np.zeros((4, 5, 6)), rgb=False)
+    axes = [
+        TimeAxis(name="t", unit=TimeUnits.SECOND),
+        SpaceAxis(name="y", unit=SpaceUnits.MILLIMETER),
+        SpaceAxis(name="x", unit=SpaceUnits.MILLIMETER),
+    ]
+
+    image.metadata[EXTRA_METADATA_KEY] = ExtraMetadata(axes=axes)
+    assert viewer.dims.axis_labels != ("t", "y", "x")
+    assert viewer.scale_bar.unit is None
+    assert widget._spatial_units.currentText() != "millimeter"
+    assert widget._temporal_units.currentText() != "second"
+
+    viewer.add_layer(image)
+
+    axes_after = image.metadata[EXTRA_METADATA_KEY].axes
+    assert axes_after[0].name == "t"
+    assert axes_after[1].name == "y"
+    assert axes_after[2].name == "x"
+    assert viewer.dims.axis_labels == ("t", "y", "x")
+    assert axis_names(widget) == ("t", "y", "x")
+
+    assert axes_after[0].get_type() == AxisType.TIME
+    assert axes_after[1].get_type() == AxisType.SPACE
+    assert axes_after[2].get_type() == AxisType.SPACE
+    widget_axis_types = tuple(
+        AxisType.from_name(w.type.currentText())
+        for w in widget._axes_widget.axis_widgets()
+    )
+    assert widget_axis_types == (AxisType.TIME, AxisType.SPACE, AxisType.SPACE)
+
+    assert axes_after[0].get_unit_name() == "second"
+    assert axes_after[1].get_unit_name() == "millimeter"
+    assert axes_after[2].get_unit_name() == "millimeter"
+    assert viewer.scale_bar.unit == "millimeter"
+    assert widget._spatial_units.currentText() == "millimeter"
+    assert widget._temporal_units.currentText() == "second"
 
 
 def axis_names(widget: QMetadataWidget) -> Tuple[str, ...]:

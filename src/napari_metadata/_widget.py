@@ -15,7 +15,7 @@ from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
 from napari_metadata._axes_spacing_widget import AxesSpacingWidget
 from napari_metadata._model import (
     coerce_layer_extra_metadata,
-    set_layer_axis_names,
+    get_layer_time_unit,
     set_layer_space_unit,
     set_layer_time_unit,
 )
@@ -65,14 +65,14 @@ class QMetadataWidget(QWidget):
         self._spatial_units = SpatialUnitsComboBox(napari_viewer)
         self._add_attribute_row("Spatial units", self._spatial_units)
         self._spatial_units.currentTextChanged.connect(
-            self._update_all_layers_extra_metadata
+            self._on_spatial_units_changed
         )
 
         self._temporal_units = QComboBox()
         self._temporal_units.addItems(TimeUnits.names())
         self._add_attribute_row("Temporal units", self._temporal_units)
         self._temporal_units.currentTextChanged.connect(
-            self._update_all_layers_extra_metadata
+            self._on_temporal_units_changed
         )
 
         layout.addStretch(1)
@@ -95,18 +95,19 @@ class QMetadataWidget(QWidget):
 
         self._on_selected_layers_changed()
 
-    def _update_all_layers_extra_metadata(self) -> None:
+    def _on_spatial_units_changed(self):
         space_unit = SpaceUnits.from_name(self._spatial_units.currentText())
-        time_unit = TimeUnits.from_name(self._temporal_units.currentText())
+        if space_unit is None:
+            space_unit = SpaceUnits.NONE
         for layer in self.viewer.layers:
-            layer_axis_names = self.viewer.dims.axis_labels[
-                -layer.ndim :  # noqa
-            ]
-            set_layer_axis_names(layer, layer_axis_names)
-            if space_unit is not None:
-                set_layer_space_unit(layer, space_unit)
-            if time_unit is not None:
-                set_layer_time_unit(layer, time_unit)
+            set_layer_space_unit(layer, space_unit)
+
+    def _on_temporal_units_changed(self):
+        time_unit = TimeUnits.from_name(self._temporal_units.currentText())
+        if time_unit is None:
+            time_unit = TimeUnits.NONE
+        for layer in self.viewer.layers:
+            set_layer_time_unit(layer, time_unit)
 
     def _on_show_full_toggled(self) -> None:
         show_full = self._show_full.isChecked()
@@ -162,7 +163,7 @@ class QMetadataWidget(QWidget):
                 self._on_selected_layer_data_changed
             )
 
-        layer = coerce_layer_extra_metadata(layer)
+        layer = coerce_layer_extra_metadata(self.viewer, layer)
 
         if layer is not None:
             self._name.setText(layer.name)
@@ -178,8 +179,12 @@ class QMetadataWidget(QWidget):
         else:
             self._attribute_widget.hide()
 
+        self._spatial_units.set_selected_layer(layer)
         self._axes_widget.set_selected_layer(layer)
         self._spacing_widget.set_selected_layer(layer)
+        if layer is not None:
+            time_unit = str(get_layer_time_unit(layer))
+            self._temporal_units.setCurrentText(time_unit)
 
         self._selected_layer = layer
 
