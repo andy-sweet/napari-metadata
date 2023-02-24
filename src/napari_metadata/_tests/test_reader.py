@@ -1,6 +1,9 @@
+from typing import List
+
 import numpy as np
 import pytest
 from napari.layers import Image
+from npe2.types import LayerData
 
 from .._model import (
     EXTRA_METADATA_KEY,
@@ -10,7 +13,7 @@ from .._model import (
     TimeAxis,
     TimeUnits,
 )
-from .._reader import read_ome_zarr
+from .._reader import napari_get_reader
 from .._writer import write_image
 
 
@@ -22,6 +25,11 @@ def rng() -> np.random.Generator:
 @pytest.fixture
 def path(tmp_path) -> str:
     return str(tmp_path / "test.zarr")
+
+
+def read_ome_zarr(path: str) -> List[LayerData]:
+    reader = napari_get_reader(path)
+    return reader(path)
 
 
 def test_read_2d_image_without_extras(rng, path):
