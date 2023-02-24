@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from qtpy.QtWidgets import (
@@ -14,6 +15,8 @@ from qtpy.QtWidgets import (
 from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
 from napari_metadata._axes_spacing_widget import AxesSpacingWidget
 from napari_metadata._model import (
+    EXTRA_METADATA_KEY,
+    ExtraMetadata,
     coerce_layer_extra_metadata,
     get_layer_time_unit,
     set_layer_space_unit,
@@ -48,6 +51,7 @@ class QMetadataWidget(QWidget):
         layout.addWidget(self._attribute_widget)
 
         self._attribute_layout = QGridLayout()
+        self._attribute_layout.setContentsMargins(0, 0, 0, 0)
         self._attribute_widget.setLayout(self._attribute_layout)
 
         self._name = QLineEdit()
@@ -78,6 +82,16 @@ class QMetadataWidget(QWidget):
             self._on_temporal_units_changed
         )
 
+        restore_layout = QHBoxLayout()
+        restore_layout.addStretch(1)
+        self._restore_defaults = QPushButton("Restore defaults")
+        self._restore_defaults.setStyleSheet(
+            "QPushButton {" "color: #898D93;" "background: transparent;" "}"
+        )
+        self._restore_defaults.clicked.connect(self._on_restore_clicked)
+        restore_layout.addWidget(self._restore_defaults)
+        layout.addLayout(restore_layout)
+
         # Push control widget to bottom.
         layout.addStretch(1)
 
@@ -103,6 +117,21 @@ class QMetadataWidget(QWidget):
         layout.addWidget(self._control_widget)
 
         self._on_selected_layers_changed()
+
+    def _on_restore_clicked(self) -> None:
+        if layer := self._get_selected_layer():
+            metadata: ExtraMetadata = layer.metadata[EXTRA_METADATA_KEY]
+            if original := metadata.original:
+                metadata.axes = list(deepcopy(original.axes))
+                if name := original.name:
+                    layer.name = name
+                if scale := original.scale:
+                    layer.scale = scale
+                # TODO: refactor with _on_selected_layers_changed
+                self._spatial_units.set_selected_layer(layer)
+                self._axes_widget.set_selected_layer(layer)
+                time_unit = str(get_layer_time_unit(layer))
+                self._temporal_units.setCurrentText(time_unit)
 
     def _on_spatial_units_changed(self):
         space_unit = SpaceUnits.from_name(self._spatial_units.currentText())

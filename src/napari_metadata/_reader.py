@@ -10,6 +10,7 @@ TODO: proper attribution for this.
 
 import logging
 import warnings
+from copy import deepcopy
 from typing import Any, Dict, Iterator, List, Optional
 
 import numpy as np
@@ -22,6 +23,7 @@ from ._model import (
     EXTRA_METADATA_KEY,
     Axis,
     ExtraMetadata,
+    OriginalMetadata,
     SpaceAxis,
     TimeAxis,
 )
@@ -146,12 +148,6 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
                         name if isinstance(name, str) else name[0]
                     )
 
-                # MOD: this plugin provides somewhere to put the axes.
-                axes = get_axes(node.metadata)
-                metadata["metadata"] = {
-                    EXTRA_METADATA_KEY: ExtraMetadata(axes=axes),
-                }
-
                 if node.load(Label):
                     layer_type = "labels"
                     for x in METADATA_KEYS:
@@ -192,6 +188,24 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
                                     metadata[x] = node.metadata[x][0]
                                 except Exception:
                                     pass
+
+                # MOD: this plugin provides somewhere to put the axes
+                # and some extra metadata.
+                axes = get_axes(node.metadata)
+                original_meta = OriginalMetadata(
+                    axes=deepcopy(axes),
+                    name=metadata.get("name"),
+                    scale=tuple(metadata["scale"])
+                    if "scale" in metadata
+                    else None,
+                )
+                extra_meta = ExtraMetadata(
+                    axes=axes,
+                    original=original_meta,
+                )
+                if "metadata" not in metadata:
+                    metadata["metadata"] = dict()
+                metadata["metadata"][EXTRA_METADATA_KEY] = extra_meta
 
                 rv: LayerData = (data, metadata, layer_type)
                 LOGGER.debug(f"Transformed: {rv}")
