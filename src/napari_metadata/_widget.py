@@ -87,6 +87,9 @@ class QMetadataWidget(QWidget):
         self._show_full = QPushButton()
         self._show_full.setChecked(False)
         self._show_full.setCheckable(True)
+        self._show_full.setStyleSheet(
+            "QPushButton {" "color: #66C1FF;" "background: transparent;" "}"
+        )
         self._show_full.toggled.connect(self._on_show_full_toggled)
 
         control_layout.addWidget(self._show_full)
