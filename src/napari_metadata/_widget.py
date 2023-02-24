@@ -111,8 +111,10 @@ class QMetadataWidget(QWidget):
             metadata: ExtraMetadata = layer.metadata[EXTRA_METADATA_KEY]
             if original := metadata.original:
                 metadata.axes = list(deepcopy(original.axes))
-                layer.name = original.name
-                layer.scale = original.scale
+                if name := original.name:
+                    layer.name = name
+                if scale := original.scale:
+                    layer.scale = scale
                 # TODO: refactor with _on_selected_layers_changed
                 self._spatial_units.set_selected_layer(layer)
                 self._axes_widget.set_selected_layer(layer)
