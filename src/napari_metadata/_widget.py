@@ -22,6 +22,8 @@ from napari_metadata._model import (
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._spatial_units_combo_box import SpatialUnitsComboBox
 from napari_metadata._time_units import TimeUnits
+from napari_metadata._file_size import generate_display_size
+
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -74,6 +76,10 @@ class QMetadataWidget(QWidget):
         self._temporal_units.currentTextChanged.connect(
             self._update_all_layers_extra_metadata
         )
+
+        self._file_size = QLineEdit()
+        self._add_attribute_row("File size", self._file_size)
+        self._file_size.textChanged.connect(self._on_name_changed)
 
         layout.addStretch(1)
 
@@ -170,6 +176,7 @@ class QMetadataWidget(QWidget):
             self._plugin.setText(self._get_plugin_info(layer))
             self._data_shape.setText(str(layer.data.shape))
             self._data_type.setText(str(layer.data.dtype))
+            self._file_size.setText(generate_display_size(layer.source.path))
 
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.data.connect(self._on_selected_layer_data_changed)
