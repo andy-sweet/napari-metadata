@@ -113,7 +113,11 @@ class QMetadataWidget(QWidget):
                 metadata.axes = list(deepcopy(original.axes))
                 layer.name = original.name
                 layer.scale = original.scale
+                # TODO: refactor with _on_selected_layers_changed
+                self._spatial_units.set_selected_layer(layer)
                 self._axes_widget.set_selected_layer(layer)
+                time_unit = str(get_layer_time_unit(layer))
+                self._temporal_units.setCurrentText(time_unit)
 
     def _on_spatial_units_changed(self):
         space_unit = SpaceUnits.from_name(self._spatial_units.currentText())

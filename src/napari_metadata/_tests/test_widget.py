@@ -310,7 +310,7 @@ def test_restore_defaults(qtbot: "QtBot"):
     metadata: ExtraMetadata = layer.metadata[EXTRA_METADATA_KEY]
     metadata.original = OriginalMetadata(
         axes=(
-            SpaceAxis(name="v", unit=SpaceUnits.CENTIMETER),
+            TimeAxis(name="t", unit=TimeUnits.NANOSECOND),
             SpaceAxis(name="u", unit=SpaceUnits.CENTIMETER),
         ),
         name="kermit",
@@ -319,12 +319,16 @@ def test_restore_defaults(qtbot: "QtBot"):
     assert layer.name != metadata.original.name
     assert tuple(layer.scale) != metadata.original.scale
     assert tuple(metadata.axes) != metadata.original.axes
+    assert widget._spatial_units.currentText() != "centimeter"
+    assert widget._temporal_units.currentText() != "nanosecond"
 
     widget._restore_defaults.click()
 
     assert layer.name == metadata.original.name
     assert tuple(layer.scale) == metadata.original.scale
     assert tuple(metadata.axes) == metadata.original.axes
+    assert widget._spatial_units.currentText() == "centimeter"
+    assert widget._temporal_units.currentText() == "nanosecond"
 
 
 def test_add_image_with_existing_metadata(qtbot: "QtBot"):
