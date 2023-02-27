@@ -110,14 +110,25 @@ class QMetadataWidget(QWidget):
         control_layout.addWidget(self._show_full)
         control_layout.addStretch(1)
         self._close_button = QPushButton()
-        # TODO: dock widget should be closed when clicked.
+        self._close_button.clicked.connect(self._on_close_clicked)
         control_layout.addWidget(self._close_button)
+        # TODO: save is in designs, but unclear if we should really
+        # allow in-place saving given napari reader/writer model.
+        self._save_button = QPushButton("Save")
+        self._save_button.setEnabled(False)
+        control_layout.addWidget(self._save_button)
 
         self._on_show_full_toggled()
 
         layout.addWidget(self._control_widget)
 
         self._on_selected_layers_changed()
+
+    def _on_close_clicked(self) -> None:
+        # TODO: make this less fragile, but also don't require a full
+        # viewer for tests.
+        if window := getattr(self.viewer, "window", None):
+            window.remove_dock_widget(self)
 
     def _on_restore_clicked(self) -> None:
         if layer := self._get_selected_layer():
@@ -157,6 +168,8 @@ class QMetadataWidget(QWidget):
             self._show_full.setText("View full metadata")
             self._close_button.setText("Cancel")
 
+        self._save_button.setVisible(not show_full)
+
         for row in range(self._attribute_layout.rowCount()):
             item = self._attribute_layout.itemAtPosition(row, 1)
             if item is not None:
@@ -191,6 +204,7 @@ class QMetadataWidget(QWidget):
 
         self._info_label.setVisible(layer is None)
         self._attribute_widget.setVisible(layer is not None)
+        self._restore_defaults.setVisible(layer is not None)
         self._control_widget.setVisible(layer is not None)
 
         # This can occur when there is no selected layer at initialization,

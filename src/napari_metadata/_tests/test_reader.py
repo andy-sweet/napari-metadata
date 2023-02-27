@@ -7,6 +7,7 @@ from npe2.types import LayerData
 
 from .._model import (
     EXTRA_METADATA_KEY,
+    ChannelAxis,
     ExtraMetadata,
     SpaceAxis,
     SpaceUnits,
@@ -174,3 +175,40 @@ def test_read_2d_image_with_mixed_space_units(rng, path):
     read_extras: ExtraMetadata = read_metadata["metadata"][EXTRA_METADATA_KEY]
     assert read_extras.axes[0] == SpaceAxis(name="y", unit=SpaceUnits.NONE)
     assert read_extras.axes[1] == SpaceAxis(name="x", unit=SpaceUnits.NONE)
+
+
+def test_read_multichannel_2d_image_with_extras(rng, path):
+    image = Image(
+        rng.random((2, 6, 7)),
+        name="whisper",
+        scale=(1, 3, 4),
+        translate=(0, -1, 1),
+    )
+    data, metadata, _ = image.as_layer_data_tuple()
+    extras = ExtraMetadata(
+        axes=[
+            ChannelAxis(name="c"),
+            SpaceAxis(name="y", unit=SpaceUnits.MILLIMETER),
+            SpaceAxis(name="x", unit=SpaceUnits.MILLIMETER),
+        ],
+    )
+    metadata["metadata"][EXTRA_METADATA_KEY] = extras
+    paths_written = write_image(path, data, metadata)
+    assert len(paths_written) == 1
+    assert paths_written[0] == path
+
+    read_layers = read_ome_zarr(path)
+
+    assert len(read_layers) == 1
+    read_data, read_metadata, _ = read_layers[0]
+    np.testing.assert_array_equal(read_data, data)
+
+    assert read_metadata["name"] == "whisper"
+    assert read_metadata["scale"] == (3, 4)
+    assert read_metadata["translate"] == (-1, 1)
+    assert read_metadata["channel_axis"] == 0
+
+    read_extras: ExtraMetadata = read_metadata["metadata"][EXTRA_METADATA_KEY]
+    assert len(read_extras.axes) == 2
+    assert read_extras.axes[0] == extras.axes[1]
+    assert read_extras.axes[1] == extras.axes[2]

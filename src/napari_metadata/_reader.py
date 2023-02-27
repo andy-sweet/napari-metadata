@@ -142,7 +142,7 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
                     data = data[0]
 
                 # MOD: there is one name for all datasets and axes.
-                if channel_axis is None and "name" in node.metadata:
+                if "name" in node.metadata:
                     name = node.metadata["name"]
                     metadata["name"] = (
                         name if isinstance(name, str) else name[0]
@@ -218,16 +218,9 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
 
 def get_axes(metadata: Dict) -> List[Axis]:
     axes = []
-    for axis in metadata["axes"]:
-        name = axis["name"]
-        unit = axis.get("unit", "none")
-        axis_type = axis.get("type")
-        if axis_type == "time":
-            axis = TimeAxis(name=name, unit=TimeUnits.from_name(unit))
-        elif axis_type != "channel":
-            axis = SpaceAxis(name=name, unit=SpaceUnits.from_name(unit))
-        axes.append(axis)
-
+    for a in metadata["axes"]:
+        if axis := get_axis(a):
+            axes.append(axis)
     space_axes = tuple(axis for axis in axes if isinstance(axis, SpaceAxis))
     space_units = {axis.get_unit_name() for axis in space_axes}
     if len(space_units) > 1:
@@ -239,3 +232,14 @@ def get_axes(metadata: Dict) -> List[Axis]:
         for axis in space_axes:
             axis.unit = SpaceUnits.NONE
     return axes
+
+
+def get_axis(axis: Dict) -> Optional[Axis]:
+    name = axis["name"]
+    unit = axis.get("unit", "none")
+    axis_type = axis.get("type")
+    if axis_type == "time":
+        return TimeAxis(name=name, unit=TimeUnits.from_name(unit))
+    elif axis_type != "channel":
+        return SpaceAxis(name=name, unit=SpaceUnits.from_name(unit))
+    return None
