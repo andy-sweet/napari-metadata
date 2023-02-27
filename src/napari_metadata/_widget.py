@@ -97,6 +97,7 @@ class QMetadataWidget(QWidget):
 
         self._control_widget = QWidget()
         control_layout = QHBoxLayout()
+        control_layout.setContentsMargins(0, 0, 0, 0)
         self._control_widget.setLayout(control_layout)
         self._show_full = QPushButton()
         self._show_full.setChecked(False)
