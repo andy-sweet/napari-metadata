@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from qtpy.QtWidgets import (
     QComboBox,
@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -31,21 +32,13 @@ if TYPE_CHECKING:
     from napari.layers import Layer
 
 
-class QMetadataWidget(QWidget):
-    def __init__(self, napari_viewer: "ViewerModel"):
+class EditableMetadataWidget(QWidget):
+    def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
-        self.viewer = napari_viewer
+        self._viewer = viewer
         self._selected_layer = None
-
-        self.viewer.layers.selection.events.changed.connect(
-            self._on_selected_layers_changed
-        )
-
         layout = QVBoxLayout()
         self.setLayout(layout)
-
-        self._info_label = QLabel("Select a single layer to view its metadata")
-        layout.addWidget(self._info_label)
 
         self._attribute_widget = QWidget()
         layout.addWidget(self._attribute_widget)
@@ -54,22 +47,17 @@ class QMetadataWidget(QWidget):
         self._attribute_layout.setContentsMargins(0, 0, 0, 0)
         self._attribute_widget.setLayout(self._attribute_layout)
 
-        self._name = QLineEdit()
-        self._add_attribute_row("Channel name", self._name)
-        self._name.textChanged.connect(self._on_name_changed)
+        self.name = QLineEdit()
+        self._add_attribute_row("Channel name", self.name)
+        self.name.textChanged.connect(self._on_name_changed)
 
-        self._file_path = self._add_readonly_attribute_row("File name")
-        self._plugin = self._add_readonly_attribute_row("Plugin")
-        self._data_shape = self._add_readonly_attribute_row("Array shape")
-        self._data_type = self._add_readonly_attribute_row("Data type")
-
-        self._axes_widget = AxesNameTypeWidget(napari_viewer)
+        self._axes_widget = AxesNameTypeWidget(viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
-        self._spacing_widget = AxesSpacingWidget(napari_viewer)
+        self._spacing_widget = AxesSpacingWidget(viewer)
         self._add_attribute_row("Spacing", self._spacing_widget)
 
-        self._spatial_units = SpatialUnitsComboBox(napari_viewer)
+        self._spatial_units = SpatialUnitsComboBox(viewer)
         self._add_attribute_row("Spatial units", self._spatial_units)
         self._spatial_units.currentTextChanged.connect(
             self._on_spatial_units_changed
@@ -99,39 +87,76 @@ class QMetadataWidget(QWidget):
         control_layout = QHBoxLayout()
         control_layout.setContentsMargins(0, 0, 0, 0)
         self._control_widget.setLayout(control_layout)
-        self._show_full = QPushButton()
-        self._show_full.setChecked(False)
-        self._show_full.setCheckable(True)
-        self._show_full.setStyleSheet(
+
+        self.show_readonly = QPushButton("View full metadata")
+        self.show_readonly.setStyleSheet(
             "QPushButton {" "color: #66C1FF;" "background: transparent;" "}"
         )
-        self._show_full.toggled.connect(self._on_show_full_toggled)
 
-        control_layout.addWidget(self._show_full)
+        control_layout.addWidget(self.show_readonly)
         control_layout.addStretch(1)
-        self._close_button = QPushButton()
-        self._close_button.clicked.connect(self._on_close_clicked)
-        control_layout.addWidget(self._close_button)
+        self.cancel_button = QPushButton("Cancel")
+        control_layout.addWidget(self.cancel_button)
         # TODO: save is in designs, but unclear if we should really
         # allow in-place saving given napari reader/writer model.
         self._save_button = QPushButton("Save")
         self._save_button.setEnabled(False)
         control_layout.addWidget(self._save_button)
 
-        self._on_show_full_toggled()
-
         layout.addWidget(self._control_widget)
 
-        self._on_selected_layers_changed()
+    def set_selected_layer(self, layer: Optional["Layer"]) -> None:
+        if layer == self._selected_layer:
+            return
 
-    def _on_close_clicked(self) -> None:
-        # TODO: make this less fragile, but also don't require a full
-        # viewer for tests.
-        if window := getattr(self.viewer, "window", None):
-            window.remove_dock_widget(self)
+        if self._selected_layer is not None:
+            self._selected_layer.events.name.disconnect(
+                self._on_selected_layer_name_changed
+            )
+
+        if layer is not None:
+            layer.events.name.connect(self._on_selected_layer_name_changed)
+
+        self._spatial_units.set_selected_layer(layer)
+        self._axes_widget.set_selected_layer(layer)
+        self._spacing_widget.set_selected_layer(layer)
+        if layer is not None:
+            self.name.setText(layer.name)
+            time_unit = str(get_layer_time_unit(layer))
+            self._temporal_units.setCurrentText(time_unit)
+
+        self._selected_layer = layer
+
+    def _add_attribute_row(self, name: str, widget: QWidget) -> None:
+        layout = self._attribute_widget.layout()
+        row = layout.rowCount()
+        layout.addWidget(QLabel(name), row, 0)
+        layout.addWidget(widget, row, 1)
+
+    def _on_selected_layer_name_changed(self, event) -> None:
+        # TODO: find a more reliable way to do this.
+        self.name.setText(event.source.name)
+
+    def _on_name_changed(self) -> None:
+        if layer := _get_selected_layer(self._viewer):
+            layer.name = self.name.text()
+
+    def _on_spatial_units_changed(self):
+        space_unit = SpaceUnits.from_name(self._spatial_units.currentText())
+        if space_unit is None:
+            space_unit = SpaceUnits.NONE
+        for layer in self._viewer.layers:
+            set_layer_space_unit(layer, space_unit)
+
+    def _on_temporal_units_changed(self):
+        time_unit = TimeUnits.from_name(self._temporal_units.currentText())
+        if time_unit is None:
+            time_unit = TimeUnits.NONE
+        for layer in self._viewer.layers:
+            set_layer_time_unit(layer, time_unit)
 
     def _on_restore_clicked(self) -> None:
-        if layer := self._get_selected_layer():
+        if layer := _get_selected_layer(self._viewer):
             metadata: ExtraMetadata = layer.metadata[EXTRA_METADATA_KEY]
             if original := metadata.original:
                 metadata.axes = list(deepcopy(original.axes))
@@ -145,71 +170,60 @@ class QMetadataWidget(QWidget):
                 time_unit = str(get_layer_time_unit(layer))
                 self._temporal_units.setCurrentText(time_unit)
 
-    def _on_spatial_units_changed(self):
-        space_unit = SpaceUnits.from_name(self._spatial_units.currentText())
-        if space_unit is None:
-            space_unit = SpaceUnits.NONE
-        for layer in self.viewer.layers:
-            set_layer_space_unit(layer, space_unit)
 
-    def _on_temporal_units_changed(self):
-        time_unit = TimeUnits.from_name(self._temporal_units.currentText())
-        if time_unit is None:
-            time_unit = TimeUnits.NONE
-        for layer in self.viewer.layers:
-            set_layer_time_unit(layer, time_unit)
+class ReadOnlyMetadataWidget(QWidget):
+    def __init__(self, viewer: "ViewerModel") -> None:
+        super().__init__()
+        self._viewer = viewer
+        self._selected_layer = None
+        layout = QVBoxLayout()
+        self.setLayout(layout)
 
-    def _on_show_full_toggled(self) -> None:
-        show_full = self._show_full.isChecked()
-        if show_full:
-            self._show_full.setText("View editable metadata")
-            self._close_button.setText("Close")
-        else:
-            self._show_full.setText("View full metadata")
-            self._close_button.setText("Cancel")
+        self._attribute_widget = QWidget()
+        layout.addWidget(self._attribute_widget)
 
-        self._save_button.setVisible(not show_full)
+        self._attribute_layout = QGridLayout()
+        self._attribute_layout.setContentsMargins(0, 0, 0, 0)
+        self._attribute_widget.setLayout(self._attribute_layout)
 
-        for row in range(self._attribute_layout.rowCount()):
-            item = self._attribute_layout.itemAtPosition(row, 1)
-            if item is not None:
-                widget = item.widget()
-                if isinstance(widget, QLineEdit) and widget.isReadOnly():
-                    self._set_attribute_row_visible(row, show_full)
-                widget.setEnabled(not show_full)
+        self.name = self._add_attribute_row("Layer name")
 
-    def _on_name_changed(self) -> None:
-        if layer := self._get_selected_layer():
-            layer.name = self._name.text()
+        self.file_path = self._add_attribute_row("File name")
+        self.plugin = self._add_attribute_row("Plugin")
+        self.data_shape = self._add_attribute_row("Array shape")
+        self.data_type = self._add_attribute_row("Data type")
 
-    def _set_attribute_row_visible(self, row: int, visible: bool) -> None:
-        for column in range(self._attribute_layout.columnCount()):
-            item = self._attribute_layout.itemAtPosition(row, column)
-            item.widget().setVisible(visible)
+        # TODO: handle axes and spacing.
+        # self._axes_widget = AxesNameTypeWidget(viewer)
+        # self._add_attribute_row("Dimensions", self._axes_widget)
 
-    def _add_attribute_row(self, name: str, widget: QWidget) -> None:
-        layout = self._attribute_widget.layout()
-        row = layout.rowCount()
-        layout.addWidget(QLabel(name), row, 0)
-        layout.addWidget(widget, row, 1)
+        # self._spacing_widget = AxesSpacingWidget(viewer)
+        # self._add_attribute_row("Spacing", self._spacing_widget)
 
-    def _add_readonly_attribute_row(self, name: str) -> None:
-        widget = QLineEdit()
-        widget.setReadOnly(True)
-        self._add_attribute_row(name, widget)
-        return widget
+        self.spatial_units = self._add_attribute_row("Spatial units")
+        self.temporal_units = self._add_attribute_row("Temporal units")
 
-    def _on_selected_layers_changed(self) -> None:
-        layer = self._get_selected_layer()
+        # Push control widget to bottom.
+        layout.addStretch(1)
 
-        self._info_label.setVisible(layer is None)
-        self._attribute_widget.setVisible(layer is not None)
-        self._restore_defaults.setVisible(layer is not None)
-        self._control_widget.setVisible(layer is not None)
+        self._control_widget = QWidget()
+        control_layout = QHBoxLayout()
+        control_layout.setContentsMargins(0, 0, 0, 0)
+        self._control_widget.setLayout(control_layout)
 
-        # This can occur when there is no selected layer at initialization,
-        # so some things must be done before this (e.g. changing visibility
-        # of certain widgets).
+        self.show_editable = QPushButton("View editable metadata")
+        self.show_editable.setStyleSheet(
+            "QPushButton {" "color: #66C1FF;" "background: transparent;" "}"
+        )
+
+        control_layout.addWidget(self.show_editable)
+        control_layout.addStretch(1)
+        self.close_button = QPushButton("Close")
+        control_layout.addWidget(self.close_button)
+
+        layout.addWidget(self._control_widget)
+
+    def set_selected_layer(self, layer: Optional["Layer"]) -> None:
         if layer == self._selected_layer:
             return
 
@@ -221,29 +235,37 @@ class QMetadataWidget(QWidget):
                 self._on_selected_layer_data_changed
             )
 
-        layer = coerce_layer_extra_metadata(self.viewer, layer)
-
         if layer is not None:
-            self._name.setText(layer.name)
-            self._file_path.setText(str(layer.source.path))
-            self._plugin.setText(self._get_plugin_info(layer))
-            self._data_shape.setText(str(layer.data.shape))
-            self._data_type.setText(str(layer.data.dtype))
+            self.name.setText(layer.name)
+            self.file_path.setText(str(layer.source.path))
+            self.plugin.setText(self._get_plugin_info(layer))
+            self.data_shape.setText(str(layer.data.shape))
+            self.data_type.setText(str(layer.data.dtype))
 
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.data.connect(self._on_selected_layer_data_changed)
 
-        self._spatial_units.set_selected_layer(layer)
-        self._axes_widget.set_selected_layer(layer)
-        self._spacing_widget.set_selected_layer(layer)
-        if layer is not None:
-            time_unit = str(get_layer_time_unit(layer))
-            self._temporal_units.setCurrentText(time_unit)
+        # TODO: set axes values
 
         self._selected_layer = layer
 
-    def _get_axis_names(self, layer: "Layer") -> Tuple[str, ...]:
-        return self._axes_widget._layer_axis_names(layer)
+    def _add_attribute_row(self, name: str) -> QWidget:
+        layout = self._attribute_widget.layout()
+        row = layout.rowCount()
+        layout.addWidget(QLabel(name), row, 0)
+        widget = QLineEdit()
+        widget.setReadOnly(True)
+        layout.addWidget(widget, row, 1)
+        return widget
+
+    def _on_selected_layer_name_changed(self, event) -> None:
+        # TODO: find a more reliable way to do this.
+        self.name.setText(event.source.name)
+
+    def _on_selected_layer_data_changed(self, event) -> None:
+        data = event.value
+        self.data_shape.setText(str(data.shape))
+        self.data_type.setText(str(data.dtype))
 
     def _get_plugin_info(self, layer: "Layer") -> str:
         source = layer.source
@@ -253,15 +275,81 @@ class QMetadataWidget(QWidget):
             else str(source.sample)
         )
 
-    def _get_selected_layer(self) -> Optional["Layer"]:
-        selection = self.viewer.layers.selection
-        return next(iter(selection)) if len(selection) > 0 else None
 
-    def _on_selected_layer_name_changed(self) -> None:
-        if layer := self._get_selected_layer():
-            self._name.setText(layer.name)
+class InfoWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+        info_label = QLabel("Select a single layer to view its metadata")
+        layout.addWidget(info_label)
+        layout.addStretch(1)
+        self.setLayout(layout)
 
-    def _on_selected_layer_data_changed(self) -> None:
-        if layer := self._get_selected_layer():
-            self._data_shape.setText(str(layer.data.shape))
-            self._data_type.setText(str(layer.data.dtype))
+
+class QMetadataWidget(QStackedWidget):
+    def __init__(self, napari_viewer: "ViewerModel"):
+        super().__init__()
+        self.viewer = napari_viewer
+        self._selected_layer = None
+
+        self._info_widget = InfoWidget()
+        self.addWidget(self._info_widget)
+
+        self._editable_widget = EditableMetadataWidget(napari_viewer)
+        self._editable_widget.show_readonly.clicked.connect(
+            self._show_readonly
+        )
+        self._editable_widget.cancel_button.clicked.connect(
+            self._on_cancel_clicked
+        )
+        self.addWidget(self._editable_widget)
+
+        self._readonly_widget = ReadOnlyMetadataWidget(napari_viewer)
+        self._readonly_widget.show_editable.clicked.connect(
+            self._show_editable
+        )
+        self._readonly_widget.close_button.clicked.connect(self._show_editable)
+        self.addWidget(self._readonly_widget)
+
+        self.viewer.layers.selection.events.changed.connect(
+            self._on_selected_layers_changed
+        )
+
+        self._on_selected_layers_changed()
+
+    def _show_readonly(self) -> None:
+        self.setCurrentWidget(self._readonly_widget)
+
+    def _show_editable(self) -> None:
+        self.setCurrentWidget(self._editable_widget)
+
+    def _on_selected_layers_changed(self) -> None:
+        layer = _get_selected_layer(self.viewer)
+
+        if layer is None:
+            self.setCurrentWidget(self._info_widget)
+        else:
+            self.setCurrentWidget(self._editable_widget)
+
+        # This can occur when there is no selected layer at initialization,
+        # so do some things must be done before this.
+        if layer == self._selected_layer:
+            return
+
+        layer = coerce_layer_extra_metadata(self.viewer, layer)
+
+        self._editable_widget.set_selected_layer(layer)
+        self._readonly_widget.set_selected_layer(layer)
+
+        self._selected_layer = layer
+
+    def _on_cancel_clicked(self) -> None:
+        # TODO: make this less fragile, but also don't require a full
+        # viewer for tests.
+        if window := getattr(self._viewer, "window", None):
+            window.remove_dock_widget(self)
+
+
+def _get_selected_layer(viewer: "ViewerModel") -> Optional["Layer"]:
+    selection = viewer.layers.selection
+    return next(iter(selection)) if len(selection) > 0 else None
