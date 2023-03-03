@@ -142,8 +142,7 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
                     data = data[0]
 
                 # MOD: there is one name for all datasets and axes.
-                if "name" in node.metadata:
-                    name = node.metadata["name"]
+                if name := node.metadata.get("name"):
                     metadata["name"] = (
                         name if isinstance(name, str) else name[0]
                     )
