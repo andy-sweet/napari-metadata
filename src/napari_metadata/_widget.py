@@ -19,6 +19,7 @@ from napari_metadata._model import (
     EXTRA_METADATA_KEY,
     ExtraMetadata,
     coerce_layer_extra_metadata,
+    get_layer_space_unit,
     get_layer_time_unit,
     set_layer_space_unit,
     set_layer_time_unit,
@@ -48,7 +49,7 @@ class EditableMetadataWidget(QWidget):
         self._attribute_widget.setLayout(self._attribute_layout)
 
         self.name = QLineEdit()
-        self._add_attribute_row("Channel name", self.name)
+        self._add_attribute_row("Layer name", self.name)
         self.name.textChanged.connect(self._on_name_changed)
 
         self._axes_widget = AxesNameTypeWidget(viewer)
@@ -241,6 +242,8 @@ class ReadOnlyMetadataWidget(QWidget):
             self.plugin.setText(self._get_plugin_info(layer))
             self.data_shape.setText(str(layer.data.shape))
             self.data_type.setText(str(layer.data.dtype))
+            self.spatial_units.setText(str(get_layer_space_unit(layer)))
+            self.temporal_units.setText(str(get_layer_time_unit(layer)))
 
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.data.connect(self._on_selected_layer_data_changed)
@@ -248,6 +251,12 @@ class ReadOnlyMetadataWidget(QWidget):
         # TODO: set axes values
 
         self._selected_layer = layer
+
+    def set_spatial_units(self, units: str) -> None:
+        self.spatial_units.setText(units)
+
+    def set_temporal_units(self, units: str) -> None:
+        self.temporal_units.setText(units)
 
     def _add_attribute_row(self, name: str) -> QWidget:
         layout = self._attribute_widget.layout()
@@ -310,6 +319,13 @@ class QMetadataWidget(QStackedWidget):
         )
         self._readonly_widget.close_button.clicked.connect(self._show_editable)
         self.addWidget(self._readonly_widget)
+
+        self._editable_widget._spatial_units.currentTextChanged.connect(
+            self._readonly_widget.set_spatial_units
+        )
+        self._editable_widget._temporal_units.currentTextChanged.connect(
+            self._readonly_widget.set_temporal_units
+        )
 
         self.viewer.layers.selection.events.changed.connect(
             self._on_selected_layers_changed
