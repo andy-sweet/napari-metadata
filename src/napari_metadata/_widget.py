@@ -1,6 +1,7 @@
 from copy import deepcopy
 from typing import TYPE_CHECKING, Optional
 
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
     QGridLayout,
@@ -187,8 +188,17 @@ class ReadOnlyMetadataWidget(QWidget):
         self._attribute_layout.setContentsMargins(0, 0, 0, 0)
         self._attribute_widget.setLayout(self._attribute_layout)
 
-        self.name = self._add_attribute_row("Layer name")
+        item_label = QLabel("Item")
+        item_label.setStyleSheet("font-weight: bold")
+        self._attribute_layout.addWidget(item_label, 0, 0)
+        value_label = QLabel("Value")
+        value_label.setStyleSheet("font-weight: bold")
+        value_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        self._attribute_layout.addWidget(value_label, 0, 1)
 
+        self.name = self._add_attribute_row("Layer name")
         self.file_path = self._add_attribute_row("File name")
         self.plugin = self._add_attribute_row("Plugin")
         self.data_shape = self._add_attribute_row("Array shape")
@@ -262,8 +272,10 @@ class ReadOnlyMetadataWidget(QWidget):
         layout = self._attribute_widget.layout()
         row = layout.rowCount()
         layout.addWidget(QLabel(name), row, 0)
-        widget = QLineEdit()
-        widget.setReadOnly(True)
+        widget = QLabel()
+        widget.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
         layout.addWidget(widget, row, 1)
         return widget
 
