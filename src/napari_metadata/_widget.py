@@ -33,6 +33,7 @@ from napari_metadata._model import (
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._spatial_units_combo_box import SpatialUnitsComboBox
 from napari_metadata._time_units import TimeUnits
+from napari_metadata._widget_utils import readonly_lineedit
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -277,9 +278,7 @@ class ReadOnlyMetadataWidget(QWidget):
         row = layout.rowCount()
         layout.addWidget(QLabel(name), row, 0)
         if widget is None:
-            widget = QLineEdit()
-            widget.setReadOnly(True)
-            widget.setStyleSheet("QLineEdit{" "background: transparent;" "}")
+            widget = readonly_lineedit()
         layout.addWidget(widget, row, 1)
         return widget
 

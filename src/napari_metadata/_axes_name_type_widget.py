@@ -24,6 +24,7 @@ from napari_metadata._model import (
 )
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._time_units import TimeUnits
+from napari_metadata._widget_utils import readonly_lineedit
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -168,12 +169,8 @@ class ReadOnlyAxisNameTypeWidget(QWidget):
 
     def __init__(self, parent: Optional["QWidget"]) -> None:
         super().__init__(parent)
-        self.name = QLineEdit()
-        self.name.setReadOnly(True)
-        self.name.setStyleSheet("QLineEdit{" "background: transparent;" "}")
-        self.type = QLineEdit()
-        self.type.setReadOnly(True)
-        self.type.setStyleSheet("QLineEdit{" "background: transparent;" "}")
+        self.name = readonly_lineedit()
+        self.type = readonly_lineedit()
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

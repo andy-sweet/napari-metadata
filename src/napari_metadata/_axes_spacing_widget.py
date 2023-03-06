@@ -5,10 +5,11 @@ from qtpy.QtWidgets import (
     QDoubleSpinBox,
     QHBoxLayout,
     QLayoutItem,
-    QLineEdit,
     QVBoxLayout,
     QWidget,
 )
+
+from napari_metadata._widget_utils import readonly_lineedit
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -20,9 +21,7 @@ class AxisSpacingWidget(QWidget):
 
     def __init__(self, parent: Optional["QWidget"]) -> None:
         super().__init__(parent)
-        self.name = QLineEdit()
-        self.name.setReadOnly(True)
-        self.name.setStyleSheet("QLineEdit{" "background: transparent;" "}")
+        self.name = readonly_lineedit()
 
         self.spacing = QDoubleSpinBox()
         self.spacing.setDecimals(6)
@@ -132,12 +131,8 @@ class ReadOnlyAxisSpacingWidget(QWidget):
 
     def __init__(self, parent: Optional["QWidget"]) -> None:
         super().__init__(parent)
-        self.name = QLineEdit()
-        self.name.setReadOnly(True)
-        self.name.setStyleSheet("QLineEdit{" "background: transparent;" "}")
-        self.spacing = QLineEdit()
-        self.spacing.setReadOnly(True)
-        self.spacing.setStyleSheet("QLineEdit{" "background: transparent;" "}")
+        self.name = readonly_lineedit()
+        self.spacing = readonly_lineedit()
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
