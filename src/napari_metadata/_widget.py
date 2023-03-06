@@ -18,7 +18,10 @@ from napari_metadata._axes_name_type_widget import (
     AxesNameTypeWidget,
     ReadOnlyAxesNameTypeWidget,
 )
-from napari_metadata._axes_spacing_widget import AxesSpacingWidget
+from napari_metadata._axes_spacing_widget import (
+    AxesSpacingWidget,
+    ReadOnlyAxesSpacingWidget,
+)
 from napari_metadata._model import (
     EXTRA_METADATA_KEY,
     ExtraMetadata,
@@ -207,12 +210,11 @@ class ReadOnlyMetadataWidget(QWidget):
         self.data_shape = self._add_attribute_row("Array shape")
         self.data_type = self._add_attribute_row("Data type")
 
-        # TODO: handle axes and spacing.
         self._axes_widget = ReadOnlyAxesNameTypeWidget(viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
-        # self._spacing_widget = AxesSpacingWidget(viewer)
-        # self._add_attribute_row("Spacing", self._spacing_widget)
+        self._spacing_widget = ReadOnlyAxesSpacingWidget(viewer)
+        self._add_attribute_row("Spacing", self._spacing_widget)
 
         self.spatial_units = self._add_attribute_row("Spatial units")
         self.temporal_units = self._add_attribute_row("Temporal units")
@@ -262,6 +264,7 @@ class ReadOnlyMetadataWidget(QWidget):
             layer.events.data.connect(self._on_selected_layer_data_changed)
 
         self._axes_widget.set_selected_layer(layer)
+        self._spacing_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
 
