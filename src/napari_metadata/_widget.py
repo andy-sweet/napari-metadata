@@ -14,7 +14,10 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
+from napari_metadata._axes_name_type_widget import (
+    AxesNameTypeWidget,
+    ReadOnlyAxesNameTypeWidget,
+)
 from napari_metadata._axes_spacing_widget import AxesSpacingWidget
 from napari_metadata._model import (
     EXTRA_METADATA_KEY,
@@ -205,8 +208,8 @@ class ReadOnlyMetadataWidget(QWidget):
         self.data_type = self._add_attribute_row("Data type")
 
         # TODO: handle axes and spacing.
-        # self._axes_widget = AxesNameTypeWidget(viewer)
-        # self._add_attribute_row("Dimensions", self._axes_widget)
+        self._axes_widget = ReadOnlyAxesNameTypeWidget(viewer)
+        self._add_attribute_row("Dimensions", self._axes_widget)
 
         # self._spacing_widget = AxesSpacingWidget(viewer)
         # self._add_attribute_row("Spacing", self._spacing_widget)
@@ -258,7 +261,7 @@ class ReadOnlyMetadataWidget(QWidget):
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.data.connect(self._on_selected_layer_data_changed)
 
-        # TODO: set axes values
+        self._axes_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
 
@@ -268,14 +271,17 @@ class ReadOnlyMetadataWidget(QWidget):
     def set_temporal_units(self, units: str) -> None:
         self.temporal_units.setText(units)
 
-    def _add_attribute_row(self, name: str) -> QWidget:
+    def _add_attribute_row(
+        self, name: str, widget: Optional[QWidget] = None
+    ) -> QWidget:
         layout = self._attribute_widget.layout()
         row = layout.rowCount()
         layout.addWidget(QLabel(name), row, 0)
-        widget = QLabel()
-        widget.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+        if widget is None:
+            widget = QLabel()
+            widget.setTextInteractionFlags(
+                Qt.TextInteractionFlag.TextSelectableByMouse
+            )
         layout.addWidget(widget, row, 1)
         return widget
 
@@ -295,6 +301,15 @@ class ReadOnlyMetadataWidget(QWidget):
             if source.sample is None
             else str(source.sample)
         )
+
+
+class ReadOnlyAxisTypeWidget(QWidget):
+    def __init__(self, viewer: "ViewerModel") -> None:
+        super().__init__()
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
 
 
 class InfoWidget(QWidget):
@@ -321,7 +336,7 @@ class QMetadataWidget(QStackedWidget):
             self._show_readonly
         )
         self._editable_widget.cancel_button.clicked.connect(
-            self._on_cancel_clicked
+            self._remove_dock_widget
         )
         self.addWidget(self._editable_widget)
 
@@ -329,7 +344,9 @@ class QMetadataWidget(QStackedWidget):
         self._readonly_widget.show_editable.clicked.connect(
             self._show_editable
         )
-        self._readonly_widget.close_button.clicked.connect(self._show_editable)
+        self._readonly_widget.close_button.clicked.connect(
+            self._remove_dock_widget
+        )
         self.addWidget(self._readonly_widget)
 
         self._editable_widget._spatial_units.currentTextChanged.connect(
@@ -366,15 +383,17 @@ class QMetadataWidget(QStackedWidget):
 
         layer = coerce_layer_extra_metadata(self.viewer, layer)
 
-        self._editable_widget.set_selected_layer(layer)
+        # TODO: readonly first since editable may make changes to the napari
+        # data model (e.g. axis_labels).
         self._readonly_widget.set_selected_layer(layer)
+        self._editable_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
 
-    def _on_cancel_clicked(self) -> None:
+    def _remove_dock_widget(self) -> None:
         # TODO: make this less fragile, but also don't require a full
         # viewer for tests.
-        if window := getattr(self._viewer, "window", None):
+        if window := getattr(self.viewer, "window", None):
             window.remove_dock_widget(self)
 
 
