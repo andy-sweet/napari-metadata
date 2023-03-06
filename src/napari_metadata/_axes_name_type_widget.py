@@ -1,10 +1,8 @@
 from typing import TYPE_CHECKING, Optional, Tuple, cast
 
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
-    QLabel,
     QLayoutItem,
     QLineEdit,
     QVBoxLayout,
@@ -170,14 +168,12 @@ class ReadOnlyAxisNameTypeWidget(QWidget):
 
     def __init__(self, parent: Optional["QWidget"]) -> None:
         super().__init__(parent)
-        self.name = QLabel()
-        self.name.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
-        self.type = QLabel()
-        self.type.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+        self.name = QLineEdit()
+        self.name.setReadOnly(True)
+        self.name.setStyleSheet("QLineEdit{" "background: transparent;" "}")
+        self.type = QLineEdit()
+        self.type.setReadOnly(True)
+        self.type.setStyleSheet("QLineEdit{" "background: transparent;" "}")
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

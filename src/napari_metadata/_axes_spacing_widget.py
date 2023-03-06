@@ -4,8 +4,8 @@ from qtpy.QtWidgets import (
     QAbstractSpinBox,
     QDoubleSpinBox,
     QHBoxLayout,
-    QLabel,
     QLayoutItem,
+    QLineEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -20,7 +20,10 @@ class AxisSpacingWidget(QWidget):
 
     def __init__(self, parent: Optional["QWidget"]) -> None:
         super().__init__(parent)
-        self.name = QLabel()
+        self.name = QLineEdit()
+        self.name.setReadOnly(True)
+        self.name.setStyleSheet("QLineEdit{" "background: transparent;" "}")
+
         self.spacing = QDoubleSpinBox()
         self.spacing.setDecimals(6)
         self.spacing.setRange(1e-6, 1e6)
@@ -129,8 +132,12 @@ class ReadOnlyAxisSpacingWidget(QWidget):
 
     def __init__(self, parent: Optional["QWidget"]) -> None:
         super().__init__(parent)
-        self.name = QLabel()
-        self.spacing = QLabel()
+        self.name = QLineEdit()
+        self.name.setReadOnly(True)
+        self.name.setStyleSheet("QLineEdit{" "background: transparent;" "}")
+        self.spacing = QLineEdit()
+        self.spacing.setReadOnly(True)
+        self.spacing.setStyleSheet("QLineEdit{" "background: transparent;" "}")
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

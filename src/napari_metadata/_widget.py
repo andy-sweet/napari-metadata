@@ -1,7 +1,6 @@
 from copy import deepcopy
 from typing import TYPE_CHECKING, Optional
 
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
     QGridLayout,
@@ -199,9 +198,6 @@ class ReadOnlyMetadataWidget(QWidget):
         self._attribute_layout.addWidget(item_label, 0, 0)
         value_label = QLabel("Value")
         value_label.setStyleSheet("font-weight: bold")
-        value_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
         self._attribute_layout.addWidget(value_label, 0, 1)
 
         self.name = self._add_attribute_row("Layer name")
@@ -281,10 +277,9 @@ class ReadOnlyMetadataWidget(QWidget):
         row = layout.rowCount()
         layout.addWidget(QLabel(name), row, 0)
         if widget is None:
-            widget = QLabel()
-            widget.setTextInteractionFlags(
-                Qt.TextInteractionFlag.TextSelectableByMouse
-            )
+            widget = QLineEdit()
+            widget.setReadOnly(True)
+            widget.setStyleSheet("QLineEdit{" "background: transparent;" "}")
         layout.addWidget(widget, row, 1)
         return widget
 
