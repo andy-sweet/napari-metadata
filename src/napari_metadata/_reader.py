@@ -191,12 +191,13 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
                 # MOD: this plugin provides somewhere to put the axes
                 # and some extra metadata.
                 axes = get_axes(node.metadata)
+                scale = (
+                    tuple(metadata["scale"]) if "scale" in metadata else None
+                )
                 original_meta = OriginalMetadata(
                     axes=deepcopy(axes),
                     name=metadata.get("name"),
-                    scale=tuple(metadata["scale"])
-                    if "scale" in metadata
-                    else None,
+                    scale=tuple(scale),
                 )
                 extra_meta = ExtraMetadata(
                     axes=axes,
