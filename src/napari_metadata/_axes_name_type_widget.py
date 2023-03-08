@@ -24,6 +24,7 @@ from napari_metadata._model import (
 )
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._time_units import TimeUnits
+from napari_metadata._widget_utils import readonly_lineedit
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -81,9 +82,9 @@ class AxesNameTypeWidget(QWidget):
         self._update_num_axes(dims.ndim)
         if layer is not None:
             names = self._get_layer_axis_names(layer)
-            # TODO: given the current we always need the event to be emitted,
-            # to be sure that the widgets get some values, but this a giant
-            # code smell.
+            # TODO: given the current design we always need the event to be
+            # emitted, to be sure that the widgets get some values, but this
+            # a giant code smell.
             if dims.axis_labels == names:
                 dims.events.axis_labels()
             else:
@@ -161,3 +162,86 @@ class AxesNameTypeWidget(QWidget):
                         space_unit=space_unit,
                         time_unit=time_unit,
                     )
+
+
+class ReadOnlyAxisNameTypeWidget(QWidget):
+    """Shows one axis' name and type."""
+
+    def __init__(self, parent: Optional["QWidget"]) -> None:
+        super().__init__(parent)
+        self.name = readonly_lineedit()
+        self.type = readonly_lineedit()
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.name)
+        layout.addWidget(self.type)
+        self.setLayout(layout)
+
+
+class ReadOnlyAxesNameTypeWidget(QWidget):
+    """Shows all axes' names and types."""
+
+    def __init__(self, viewer: "ViewerModel") -> None:
+        super().__init__()
+        self._viewer: "ViewerModel" = viewer
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+
+        self._viewer.dims.events.axis_labels.connect(
+            self._on_viewer_dims_axis_labels_changed
+        )
+
+        self.set_selected_layer(None)
+
+    def set_selected_layer(self, layer: Optional["Layer"]) -> None:
+        dims = self._viewer.dims
+        self._update_num_axes(dims.ndim)
+        layer_ndim = 0 if layer is None else layer.ndim
+        ndim_diff = dims.ndim - layer_ndim
+        # TODO: clean up this giant mess.
+        axes = get_layer_axes(layer) if layer is not None else ()
+        for i, widget in enumerate(self.axis_widgets()):
+            widget.setVisible(i >= ndim_diff)
+            if layer is not None and i >= ndim_diff:
+                axis = axes[i - ndim_diff]
+                widget.name.setText(axis.name)
+                widget.type.setText(str(axis.get_type()))
+
+    def _get_layer_axis_names(self, layer: "Layer") -> Tuple[str, ...]:
+        viewer_names = list(self._viewer.dims.axis_labels)
+        layer_names = get_layer_axis_names(layer)
+        viewer_names[-layer.ndim :] = layer_names  # noqa
+        return tuple(viewer_names)
+
+    def _update_num_axes(self, num_axes: int) -> None:
+        num_widgets: int = self.layout().count()
+        # Add any missing widgets.
+        for _ in range(num_axes - num_widgets):
+            widget = ReadOnlyAxisNameTypeWidget(self)
+            self.layout().addWidget(widget)
+        # Remove any unneeded widgets.
+        for i in range(num_widgets - num_axes):
+            item: QLayoutItem = self.layout().takeAt(num_widgets - (i + 1))
+            item.widget().deleteLater()
+
+    def _on_viewer_dims_axis_labels_changed(self) -> None:
+        self._set_axis_names(self._viewer.dims.axis_labels)
+
+    def _set_axis_names(self, names: Tuple[str, ...]) -> None:
+        widgets = self.axis_widgets()
+        assert len(names) == len(widgets)
+        for name, widget in zip(names, widgets):
+            widget.name.setText(name)
+
+    def axis_widgets(self) -> Tuple[ReadOnlyAxisNameTypeWidget, ...]:
+        layout = self.layout()
+        return [
+            cast(ReadOnlyAxisNameTypeWidget, layout.itemAt(i).widget())
+            for i in range(0, layout.count())
+        ]
+
+    def axis_names(self) -> Tuple[str, ...]:
+        return tuple(widget.name.text() for widget in self.axis_widgets())

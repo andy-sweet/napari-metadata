@@ -5,6 +5,7 @@ from napari.components import ViewerModel
 from napari.layers import Image
 
 from napari_metadata import QMetadataWidget
+from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
 from napari_metadata._axis_type import AxisType
 from napari_metadata._model import (
     EXTRA_METADATA_KEY,
@@ -163,7 +164,7 @@ def test_remove_only_3d_image(qtbot: "QtBot"):
 
 def test_set_axis_name(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    first_axis_widget = widget._axes_widget.axis_widgets()[0]
+    first_axis_widget = axes_widget(widget).axis_widgets()[0]
     layer = viewer.layers[0]
     new_name = "y"
     assert first_axis_widget.name.text() != new_name
@@ -178,7 +179,7 @@ def test_set_axis_name(qtbot: "QtBot"):
 
 def test_set_axis_type(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    first_axis_widget = widget._axes_widget.axis_widgets()[0]
+    first_axis_widget = axes_widget(widget).axis_widgets()[0]
     layer = viewer.layers[0]
     new_type = AxisType.CHANNEL
     assert first_axis_widget.name.text() != str(new_type)
@@ -191,7 +192,7 @@ def test_set_axis_type(qtbot: "QtBot"):
 
 def test_set_viewer_axis_label(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    first_axis_widget = widget._axes_widget.axis_widgets()[0]
+    first_axis_widget = axes_widget(widget).axis_widgets()[0]
     layer = viewer.layers[0]
     new_name = "y"
     assert viewer.dims.axis_labels[0] != new_name
@@ -206,7 +207,7 @@ def test_set_viewer_axis_label(qtbot: "QtBot"):
 
 def test_set_space_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    space_units_widget = widget._spatial_units
+    space_units_widget = widget._editable_widget._spatial_units
     layer = viewer.layers[0]
     new_unit = "millimeter"
     assert space_units_widget.currentText() != new_unit
@@ -221,7 +222,7 @@ def test_set_space_unit(qtbot: "QtBot"):
 
 def test_set_viewer_scale_bar_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    space_units_widget = widget._spatial_units
+    space_units_widget = widget._editable_widget._spatial_units
     new_unit = "millimeter"
     assert viewer.scale_bar.unit != new_unit
     assert space_units_widget.currentText() != new_unit
@@ -233,7 +234,7 @@ def test_set_viewer_scale_bar_unit(qtbot: "QtBot"):
 
 def test_set_viewer_scale_bar_unit_to_none(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    space_units_widget = widget._spatial_units
+    space_units_widget = widget._editable_widget._spatial_units
     viewer.scale_bar.unit = "millimeter"
     assert space_units_widget.currentText() != "none"
 
@@ -245,7 +246,7 @@ def test_set_viewer_scale_bar_unit_to_none(qtbot: "QtBot"):
 def test_set_viewer_scale_bar_unit_to_unknown(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     viewer.scale_bar.unit = "millimeter"
-    space_units_widget = widget._spatial_units
+    space_units_widget = widget._editable_widget._spatial_units
     assert space_units_widget.currentText() != "none"
 
     # Supported by pint/napari, but not supported by our widget.
@@ -256,7 +257,7 @@ def test_set_viewer_scale_bar_unit_to_unknown(qtbot: "QtBot"):
 
 def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    space_units_widget = widget._spatial_units
+    space_units_widget = widget._editable_widget._spatial_units
     assert viewer.scale_bar.unit != "mm"
     assert space_units_widget.currentText() != "millimeter"
 
@@ -267,8 +268,8 @@ def test_set_viewer_scale_bar_unit_to_abbreviation(qtbot: "QtBot"):
 
 def test_set_time_unit(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
-    time_units_widget = widget._temporal_units
-    name_type_widget = widget._axes_widget.axis_widgets()[0]
+    time_units_widget = widget._editable_widget._temporal_units
+    name_type_widget = axes_widget(widget).axis_widgets()[0]
     name_type_widget.type.setCurrentText("time")
     layer = viewer.layers[0]
     new_unit = "millisecond"
@@ -284,7 +285,9 @@ def test_set_layer_scale(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
     assert layer.scale[0] == 1
-    pixel_width_widget = widget._spacing_widget._axis_widgets()[0].spacing
+    pixel_width_widget = (
+        widget._editable_widget._spacing_widget._axis_widgets()[0].spacing
+    )
     assert pixel_width_widget.value() != 4.5
 
     layer.scale = (4.5, layer.scale[1])
@@ -295,7 +298,9 @@ def test_set_layer_scale(qtbot: "QtBot"):
 def test_set_pixel_size(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
-    pixel_width_widget = widget._spacing_widget._axis_widgets()[0].spacing
+    pixel_width_widget = (
+        widget._editable_widget._spacing_widget._axis_widgets()[0].spacing
+    )
     assert pixel_width_widget.value() == 1
     assert layer.scale[0] != 4.5
 
@@ -319,16 +324,20 @@ def test_restore_defaults(qtbot: "QtBot"):
     assert layer.name != metadata.original.name
     assert tuple(layer.scale) != metadata.original.scale
     assert tuple(metadata.axes) != metadata.original.axes
-    assert widget._spatial_units.currentText() != "centimeter"
-    assert widget._temporal_units.currentText() != "nanosecond"
+    assert widget._editable_widget._spatial_units.currentText() != "centimeter"
+    assert (
+        widget._editable_widget._temporal_units.currentText() != "nanosecond"
+    )
 
-    widget._restore_defaults.click()
+    widget._editable_widget._restore_defaults.click()
 
     assert layer.name == metadata.original.name
     assert tuple(layer.scale) == metadata.original.scale
     assert tuple(metadata.axes) == metadata.original.axes
-    assert widget._spatial_units.currentText() == "centimeter"
-    assert widget._temporal_units.currentText() == "nanosecond"
+    assert widget._editable_widget._spatial_units.currentText() == "centimeter"
+    assert (
+        widget._editable_widget._temporal_units.currentText() == "nanosecond"
+    )
 
 
 def test_add_image_with_existing_metadata(qtbot: "QtBot"):
@@ -344,8 +353,8 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
     image.metadata[EXTRA_METADATA_KEY] = ExtraMetadata(axes=axes)
     assert viewer.dims.axis_labels != ("t", "y", "x")
     assert viewer.scale_bar.unit is None
-    assert widget._spatial_units.currentText() != "millimeter"
-    assert widget._temporal_units.currentText() != "second"
+    assert widget._editable_widget._spatial_units.currentText() != "millimeter"
+    assert widget._editable_widget._temporal_units.currentText() != "second"
 
     viewer.add_layer(image)
 
@@ -361,7 +370,7 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
     assert axes_after[2].get_type() == AxisType.SPACE
     widget_axis_types = tuple(
         AxisType.from_name(w.type.currentText())
-        for w in widget._axes_widget.axis_widgets()
+        for w in axes_widget(widget).axis_widgets()
     )
     assert widget_axis_types == (AxisType.TIME, AxisType.SPACE, AxisType.SPACE)
 
@@ -369,16 +378,20 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
     assert axes_after[1].get_unit_name() == "millimeter"
     assert axes_after[2].get_unit_name() == "millimeter"
     assert viewer.scale_bar.unit == "millimeter"
-    assert widget._spatial_units.currentText() == "millimeter"
-    assert widget._temporal_units.currentText() == "second"
+    assert widget._editable_widget._spatial_units.currentText() == "millimeter"
+    assert widget._editable_widget._temporal_units.currentText() == "second"
+
+
+def axes_widget(widget: QMetadataWidget) -> AxesNameTypeWidget:
+    return widget._editable_widget._axes_widget
 
 
 def axis_names(widget: QMetadataWidget) -> Tuple[str, ...]:
-    return widget._axes_widget.axis_names()
+    return axes_widget(widget).axis_names()
 
 
 def are_axis_widgets_visible(widget: QMetadataWidget) -> Tuple[bool, ...]:
-    axes_widget = widget._axes_widget
+    axes_widget = widget._editable_widget._axes_widget
     return tuple(
         map(lambda w: w.isVisibleTo(widget), axes_widget.axis_widgets())
     )
