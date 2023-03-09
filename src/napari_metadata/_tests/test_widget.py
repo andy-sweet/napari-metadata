@@ -15,9 +15,7 @@ from napari_metadata._model import (
     SpaceUnits,
     TimeAxis,
     TimeUnits,
-    get_layer_axis_names,
-    get_layer_axis_types,
-    get_layer_axis_unit_names,
+    extra_metadata,
 )
 
 if TYPE_CHECKING:
@@ -30,7 +28,7 @@ def test_init_with_no_layers(qtbot: "QtBot"):
 
     widget = make_metadata_widget(qtbot, viewer)
 
-    assert are_axis_widgets_visible(widget) == (False, False)
+    assert widget.currentWidget() is widget._info_widget
 
 
 def test_init_with_one_selected_2d_image(qtbot: "QtBot"):
@@ -159,7 +157,7 @@ def test_remove_only_3d_image(qtbot: "QtBot"):
     viewer.layers.pop()
 
     assert viewer.layers.selection == set()
-    assert are_axis_widgets_visible(widget) == (False, False)
+    assert widget.currentWidget() is widget._info_widget
 
 
 def test_set_axis_name(qtbot: "QtBot"):
@@ -168,13 +166,13 @@ def test_set_axis_name(qtbot: "QtBot"):
     layer = viewer.layers[0]
     new_name = "y"
     assert first_axis_widget.name.text() != new_name
-    assert get_layer_axis_names(layer)[0] != new_name
+    assert extra_metadata(layer).axes[0].name != new_name
     assert viewer.dims.axis_labels[0] != new_name
 
     first_axis_widget.name.setText(new_name)
 
     assert viewer.dims.axis_labels[0] == new_name
-    assert get_layer_axis_names(layer)[0] == new_name
+    assert extra_metadata(layer).axes[0].name == new_name
 
 
 def test_set_axis_type(qtbot: "QtBot"):
@@ -183,11 +181,11 @@ def test_set_axis_type(qtbot: "QtBot"):
     layer = viewer.layers[0]
     new_type = AxisType.CHANNEL
     assert first_axis_widget.name.text() != str(new_type)
-    assert get_layer_axis_types(layer)[0] != new_type
+    assert extra_metadata(layer).axes[0].get_type() != new_type
 
     first_axis_widget.type.setCurrentText(str(new_type))
 
-    assert get_layer_axis_types(layer)[0] == new_type
+    assert extra_metadata(layer).axes[0].get_type() == new_type
 
 
 def test_set_viewer_axis_label(qtbot: "QtBot"):
@@ -196,13 +194,13 @@ def test_set_viewer_axis_label(qtbot: "QtBot"):
     layer = viewer.layers[0]
     new_name = "y"
     assert viewer.dims.axis_labels[0] != new_name
-    assert get_layer_axis_names(layer)[0] != new_name
+    assert extra_metadata(layer).axes[0].name != new_name
     assert first_axis_widget.name.text() != new_name
 
     viewer.dims.axis_labels = [new_name, viewer.dims.axis_labels[1]]
 
     assert first_axis_widget.name.text() == new_name
-    assert get_layer_axis_names(layer)[0] == new_name
+    assert extra_metadata(layer).axes[0].name == new_name
 
 
 def test_set_space_unit(qtbot: "QtBot"):
@@ -211,13 +209,13 @@ def test_set_space_unit(qtbot: "QtBot"):
     layer = viewer.layers[0]
     new_unit = "millimeter"
     assert space_units_widget.currentText() != new_unit
-    assert get_layer_axis_unit_names(layer)[0] != new_unit
+    assert extra_metadata(layer).axes[0].get_unit_name() != new_unit
     assert viewer.scale_bar.unit != new_unit
 
     space_units_widget.setCurrentText(new_unit)
 
     assert viewer.scale_bar.unit == new_unit
-    assert get_layer_axis_unit_names(layer)[0] == new_unit
+    assert extra_metadata(layer).axes[0].get_unit_name() == new_unit
 
 
 def test_set_viewer_scale_bar_unit(qtbot: "QtBot"):
@@ -274,11 +272,11 @@ def test_set_time_unit(qtbot: "QtBot"):
     layer = viewer.layers[0]
     new_unit = "millisecond"
     assert time_units_widget.currentText() != new_unit
-    assert get_layer_axis_unit_names(layer)[0] != new_unit
+    assert extra_metadata(layer).axes[0].get_unit_name() != new_unit
 
     time_units_widget.setCurrentText(new_unit)
 
-    assert get_layer_axis_unit_names(layer)[0] == new_unit
+    assert extra_metadata(layer).axes[0].get_unit_name() == new_unit
 
 
 def test_set_layer_scale(qtbot: "QtBot"):
@@ -312,7 +310,7 @@ def test_set_pixel_size(qtbot: "QtBot"):
 def test_restore_defaults(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
-    metadata: ExtraMetadata = layer.metadata[EXTRA_METADATA_KEY]
+    metadata = extra_metadata(layer)
     metadata.original = OriginalMetadata(
         axes=(
             TimeAxis(name="t", unit=TimeUnits.NANOSECOND),
@@ -358,7 +356,7 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
 
     viewer.add_layer(image)
 
-    axes_after = image.metadata[EXTRA_METADATA_KEY].axes
+    axes_after = extra_metadata(image).axes
     assert axes_after[0].name == "t"
     assert axes_after[1].name == "y"
     assert axes_after[2].name == "x"

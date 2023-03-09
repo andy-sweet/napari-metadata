@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 from pint import Unit, UnitRegistry
 from qtpy.QtWidgets import QComboBox
 
-from napari_metadata._model import get_layer_space_unit
+from napari_metadata._model import extra_metadata
 from napari_metadata._space_units import SpaceUnits
 
 if TYPE_CHECKING:
@@ -33,12 +33,11 @@ class SpatialUnitsComboBox(QComboBox):
 
         self._on_units_changed()
 
-    def set_selected_layer(self, layer: Optional["Layer"]) -> None:
-        if layer is not None:
-            unit = get_layer_space_unit(layer)
-            self._viewer.scale_bar.unit = (
-                str(unit) if unit != SpaceUnits.NONE else None
-            )
+    def set_selected_layer(self, layer: "Layer") -> None:
+        unit = extra_metadata(layer).get_space_unit()
+        self._viewer.scale_bar.unit = (
+            str(unit) if unit != SpaceUnits.NONE else None
+        )
 
     def _on_units_changed(self) -> None:
         text = self.currentText()

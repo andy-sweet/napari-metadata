@@ -21,15 +21,7 @@ from napari_metadata._axes_spacing_widget import (
     AxesSpacingWidget,
     ReadOnlyAxesSpacingWidget,
 )
-from napari_metadata._model import (
-    EXTRA_METADATA_KEY,
-    ExtraMetadata,
-    coerce_layer_extra_metadata,
-    get_layer_space_unit,
-    get_layer_time_unit,
-    set_layer_space_unit,
-    set_layer_time_unit,
-)
+from napari_metadata._model import coerce_extra_metadata, extra_metadata
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._spatial_units_combo_box import SpatialUnitsComboBox
 from napari_metadata._time_units import TimeUnits
@@ -105,8 +97,6 @@ class EditableMetadataWidget(QWidget):
         control_layout.addStretch(1)
         self.cancel_button = QPushButton("Cancel")
         control_layout.addWidget(self.cancel_button)
-        # TODO: save is in designs, but unclear if we should really
-        # allow in-place saving given napari reader/writer model.
         self._save_button = QPushButton("Save")
         self._save_button.setEnabled(False)
         control_layout.addWidget(self._save_button)
@@ -123,15 +113,14 @@ class EditableMetadataWidget(QWidget):
             )
 
         if layer is not None:
-            layer.events.name.connect(self._on_selected_layer_name_changed)
-
-        self._spatial_units.set_selected_layer(layer)
-        self._axes_widget.set_selected_layer(layer)
-        self._spacing_widget.set_selected_layer(layer)
-        if layer is not None:
+            self._spatial_units.set_selected_layer(layer)
+            self._axes_widget.set_selected_layer(layer)
             self.name.setText(layer.name)
-            time_unit = str(get_layer_time_unit(layer))
+            layer.events.name.connect(self._on_selected_layer_name_changed)
+            time_unit = str(extra_metadata(layer).get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
+
+        self._spacing_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
 
@@ -142,41 +131,42 @@ class EditableMetadataWidget(QWidget):
         layout.addWidget(widget, row, 1)
 
     def _on_selected_layer_name_changed(self, event) -> None:
-        # TODO: find a more reliable way to do this.
         self.name.setText(event.source.name)
 
     def _on_name_changed(self) -> None:
-        if layer := _get_selected_layer(self._viewer):
-            layer.name = self.name.text()
+        if self._selected_layer is not None:
+            self._selected_layer.name = self.name.text()
 
-    def _on_spatial_units_changed(self):
-        space_unit = SpaceUnits.from_name(self._spatial_units.currentText())
-        if space_unit is None:
-            space_unit = SpaceUnits.NONE
+    def _on_spatial_units_changed(self) -> None:
+        unit = SpaceUnits.from_name(self._spatial_units.currentText())
+        if unit is None:
+            unit = SpaceUnits.NONE
         for layer in self._viewer.layers:
-            set_layer_space_unit(layer, space_unit)
+            if extras := extra_metadata(layer):
+                extras.set_space_unit(unit)
 
-    def _on_temporal_units_changed(self):
-        time_unit = TimeUnits.from_name(self._temporal_units.currentText())
-        if time_unit is None:
-            time_unit = TimeUnits.NONE
+    def _on_temporal_units_changed(self) -> None:
+        unit = TimeUnits.from_name(self._temporal_units.currentText())
+        if unit is None:
+            unit = TimeUnits.NONE
         for layer in self._viewer.layers:
-            set_layer_time_unit(layer, time_unit)
+            if extras := extra_metadata(layer):
+                extras.set_time_unit(unit)
 
     def _on_restore_clicked(self) -> None:
-        if layer := _get_selected_layer(self._viewer):
-            metadata: ExtraMetadata = layer.metadata[EXTRA_METADATA_KEY]
-            if original := metadata.original:
-                metadata.axes = list(deepcopy(original.axes))
-                if name := original.name:
-                    layer.name = name
-                if scale := original.scale:
-                    layer.scale = scale
-                # TODO: refactor with _on_selected_layers_changed
-                self._spatial_units.set_selected_layer(layer)
-                self._axes_widget.set_selected_layer(layer)
-                time_unit = str(get_layer_time_unit(layer))
-                self._temporal_units.setCurrentText(time_unit)
+        assert self._selected_layer is not None
+        layer = self._selected_layer
+        extras = extra_metadata(layer)
+        if original := extras.original:
+            extras.axes = list(deepcopy(original.axes))
+            if name := original.name:
+                layer.name = name
+            if scale := original.scale:
+                layer.scale = scale
+            self._spatial_units.set_selected_layer(layer)
+            self._axes_widget.set_selected_layer(layer)
+            time_unit = str(extra_metadata(layer).get_time_unit())
+            self._temporal_units.setCurrentText(time_unit)
 
 
 class ReadOnlyMetadataWidget(QWidget):
@@ -254,13 +244,15 @@ class ReadOnlyMetadataWidget(QWidget):
             self.plugin.setText(self._get_plugin_info(layer))
             self.data_shape.setText(str(layer.data.shape))
             self.data_type.setText(str(layer.data.dtype))
-            self.spatial_units.setText(str(get_layer_space_unit(layer)))
-            self.temporal_units.setText(str(get_layer_time_unit(layer)))
+            extras = extra_metadata(layer)
+            self.spatial_units.setText(str(extras.get_space_unit()))
+            self.temporal_units.setText(str(extras.get_time_unit()))
 
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.data.connect(self._on_selected_layer_data_changed)
 
-        self._axes_widget.set_selected_layer(layer)
+            self._axes_widget.set_selected_layer(layer)
+
         self._spacing_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
@@ -274,16 +266,15 @@ class ReadOnlyMetadataWidget(QWidget):
     def _add_attribute_row(
         self, name: str, widget: Optional[QWidget] = None
     ) -> QWidget:
+        if widget is None:
+            widget = readonly_lineedit()
         layout = self._attribute_widget.layout()
         row = layout.rowCount()
         layout.addWidget(QLabel(name), row, 0)
-        if widget is None:
-            widget = readonly_lineedit()
         layout.addWidget(widget, row, 1)
         return widget
 
     def _on_selected_layer_name_changed(self, event) -> None:
-        # TODO: find a more reliable way to do this.
         self.name.setText(event.source.name)
 
     def _on_selected_layer_data_changed(self, event) -> None:
@@ -298,15 +289,6 @@ class ReadOnlyMetadataWidget(QWidget):
             if source.sample is None
             else str(source.sample)
         )
-
-
-class ReadOnlyAxisTypeWidget(QWidget):
-    def __init__(self, viewer: "ViewerModel") -> None:
-        super().__init__()
-
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(layout)
 
 
 class InfoWidget(QWidget):
@@ -366,7 +348,9 @@ class QMetadataWidget(QStackedWidget):
         self.setCurrentWidget(self._editable_widget)
 
     def _on_selected_layers_changed(self) -> None:
-        layer = _get_selected_layer(self.viewer)
+        layer = None
+        if len(self.viewer.layers.selection) == 1:
+            layer = next(iter(self.viewer.layers.selection))
 
         if layer is None:
             self.setCurrentWidget(self._info_widget)
@@ -378,10 +362,9 @@ class QMetadataWidget(QStackedWidget):
         if layer == self._selected_layer:
             return
 
-        layer = coerce_layer_extra_metadata(self.viewer, layer)
+        if layer is not None:
+            coerce_extra_metadata(self.viewer, layer)
 
-        # TODO: readonly first since editable may make changes to the napari
-        # data model (e.g. axis_labels).
         self._readonly_widget.set_selected_layer(layer)
         self._editable_widget.set_selected_layer(layer)
 
@@ -392,8 +375,3 @@ class QMetadataWidget(QStackedWidget):
         # viewer for tests.
         if window := getattr(self.viewer, "window", None):
             window.remove_dock_widget(self)
-
-
-def _get_selected_layer(viewer: "ViewerModel") -> Optional["Layer"]:
-    selection = viewer.layers.selection
-    return next(iter(selection)) if len(selection) > 0 else None
