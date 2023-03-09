@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Optional, Tuple, cast
 from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
-    QLayoutItem,
     QLineEdit,
     QVBoxLayout,
     QWidget,
@@ -19,7 +18,7 @@ from napari_metadata._model import (
 )
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._time_units import TimeUnits
-from napari_metadata._widget_utils import readonly_lineedit
+from napari_metadata._widget_utils import readonly_lineedit, update_num_widgets
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -72,7 +71,11 @@ class AxesNameTypeWidget(QWidget):
 
     def set_selected_layer(self, layer: "Layer") -> None:
         dims = self._viewer.dims
-        self._update_num_axes(dims.ndim)
+        update_num_widgets(
+            layout=self.layout(),
+            desired_num=dims.ndim,
+            widget_factory=self._make_axis_widget,
+        )
 
         names = self._get_layer_axis_names(layer)
         # TODO: given the current design we always need the event to be
@@ -96,17 +99,6 @@ class AxesNameTypeWidget(QWidget):
         layer_names = extra_metadata(layer).get_axis_names()
         viewer_names[-layer.ndim :] = layer_names  # noqa
         return tuple(viewer_names)
-
-    def _update_num_axes(self, num_axes: int) -> None:
-        num_widgets: int = self.layout().count()
-        # Add any missing widgets.
-        for _ in range(num_axes - num_widgets):
-            widget = self._make_axis_widget()
-            self.layout().addWidget(widget)
-        # Remove any unneeded widgets.
-        for i in range(num_widgets - num_axes):
-            item: QLayoutItem = self.layout().takeAt(num_widgets - (i + 1))
-            item.widget().deleteLater()
 
     def _make_axis_widget(self) -> AxisNameTypeWidget:
         widget = AxisNameTypeWidget(self)
@@ -187,7 +179,12 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
 
     def set_selected_layer(self, layer: "Layer") -> None:
         dims = self._viewer.dims
-        self._update_num_axes(dims.ndim)
+        update_num_widgets(
+            layout=self.layout(),
+            desired_num=dims.ndim,
+            widget_factory=lambda: ReadOnlyAxisNameTypeWidget(self),
+        )
+
         ndim_diff = dims.ndim - layer.ndim
         extras = extra_metadata(layer)
         for i, widget in enumerate(self._axis_widgets()):
@@ -196,17 +193,6 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
                 axis = extras.axes[i - ndim_diff]
                 widget.name.setText(axis.name)
                 widget.type.setText(str(axis.get_type()))
-
-    def _update_num_axes(self, num_axes: int) -> None:
-        num_widgets: int = self.layout().count()
-        # Add any missing widgets.
-        for _ in range(num_axes - num_widgets):
-            widget = ReadOnlyAxisNameTypeWidget(self)
-            self.layout().addWidget(widget)
-        # Remove any unneeded widgets.
-        for i in range(num_widgets - num_axes):
-            item: QLayoutItem = self.layout().takeAt(num_widgets - (i + 1))
-            item.widget().deleteLater()
 
     def _on_viewer_dims_axis_labels_changed(self) -> None:
         self._set_axis_names(self._viewer.dims.axis_labels)

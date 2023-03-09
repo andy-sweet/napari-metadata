@@ -4,12 +4,11 @@ from qtpy.QtWidgets import (
     QAbstractSpinBox,
     QDoubleSpinBox,
     QHBoxLayout,
-    QLayoutItem,
     QVBoxLayout,
     QWidget,
 )
 
-from napari_metadata._widget_utils import readonly_lineedit
+from napari_metadata._widget_utils import readonly_lineedit, update_num_widgets
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -56,7 +55,12 @@ class AxesSpacingWidget(QWidget):
 
     def set_selected_layer(self, layer: Optional["Layer"]) -> None:
         dims = self._viewer.dims
-        self._update_num_axes(dims.ndim)
+        update_num_widgets(
+            layout=self.layout(),
+            desired_num=dims.ndim,
+            widget_factory=self._make_axis_spacing_widget,
+        )
+
         self._set_axis_names(dims.axis_labels)
         layer_ndim = 0 if layer is None else layer.ndim
         ndim_diff = dims.ndim - layer_ndim
@@ -99,26 +103,13 @@ class AxesSpacingWidget(QWidget):
         ]
 
     def _layer_widgets(self) -> Tuple[AxisSpacingWidget, ...]:
-        layer = self._layer
-        dims = self._viewer.dims
-        layer_ndim = 0 if layer is None else layer.ndim
-        ndim_diff = dims.ndim - layer_ndim
+        layer_ndim = 0 if self._layer is None else self._layer.ndim
+        ndim_diff = self._viewer.dims.ndim - layer_ndim
         layer_widgets = []
         for i, widget in enumerate(self._axis_widgets()):
             if i >= ndim_diff:
                 layer_widgets.append(widget)
         return tuple(layer_widgets)
-
-    def _update_num_axes(self, num_axes: int) -> None:
-        num_widgets: int = self.layout().count()
-        # Add any missing widgets.
-        for _ in range(num_axes - num_widgets):
-            widget = self._make_axis_spacing_widget()
-            self.layout().addWidget(widget)
-        # Remove any unneeded widgets.
-        for i in range(num_widgets - num_axes):
-            item: QLayoutItem = self.layout().takeAt(num_widgets - (i + 1))
-            item.widget().deleteLater()
 
     def _make_axis_spacing_widget(self) -> AxisSpacingWidget:
         widget = AxisSpacingWidget(self)
@@ -158,7 +149,12 @@ class ReadOnlyAxesSpacingWidget(QWidget):
 
     def set_selected_layer(self, layer: Optional["Layer"]) -> None:
         dims = self._viewer.dims
-        self._update_num_axes(dims.ndim)
+        update_num_widgets(
+            layout=self.layout(),
+            desired_num=dims.ndim,
+            widget_factory=lambda: ReadOnlyAxisSpacingWidget(self),
+        )
+
         self._set_axis_names(dims.axis_labels)
         layer_ndim = 0 if layer is None else layer.ndim
         ndim_diff = dims.ndim - layer_ndim
@@ -197,23 +193,10 @@ class ReadOnlyAxesSpacingWidget(QWidget):
         ]
 
     def _layer_widgets(self) -> Tuple[ReadOnlyAxisSpacingWidget, ...]:
-        layer = self._layer
-        dims = self._viewer.dims
-        layer_ndim = 0 if layer is None else layer.ndim
-        ndim_diff = dims.ndim - layer_ndim
+        layer_ndim = 0 if self._layer is None else self._layer.ndim
+        ndim_diff = self._viewer.dims.ndim - layer_ndim
         layer_widgets = []
         for i, widget in enumerate(self._axis_widgets()):
             if i >= ndim_diff:
                 layer_widgets.append(widget)
         return tuple(layer_widgets)
-
-    def _update_num_axes(self, num_axes: int) -> None:
-        num_widgets: int = self.layout().count()
-        # Add any missing widgets.
-        for _ in range(num_axes - num_widgets):
-            widget = ReadOnlyAxisSpacingWidget(self)
-            self.layout().addWidget(widget)
-        # Remove any unneeded widgets.
-        for i in range(num_widgets - num_axes):
-            item: QLayoutItem = self.layout().takeAt(num_widgets - (i + 1))
-            item.widget().deleteLater()
