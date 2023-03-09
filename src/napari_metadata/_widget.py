@@ -97,8 +97,6 @@ class EditableMetadataWidget(QWidget):
         control_layout.addStretch(1)
         self.cancel_button = QPushButton("Cancel")
         control_layout.addWidget(self.cancel_button)
-        # TODO: save is in designs, but unclear if we should really
-        # allow in-place saving given napari reader/writer model.
         self._save_button = QPushButton("Save")
         self._save_button.setEnabled(False)
         control_layout.addWidget(self._save_button)
@@ -133,7 +131,6 @@ class EditableMetadataWidget(QWidget):
         layout.addWidget(widget, row, 1)
 
     def _on_selected_layer_name_changed(self, event) -> None:
-        # TODO: find a more reliable way to do this.
         self.name.setText(event.source.name)
 
     def _on_name_changed(self) -> None:
@@ -141,20 +138,20 @@ class EditableMetadataWidget(QWidget):
             self._selected_layer.name = self.name.text()
 
     def _on_spatial_units_changed(self) -> None:
-        space_unit = SpaceUnits.from_name(self._spatial_units.currentText())
-        if space_unit is None:
-            space_unit = SpaceUnits.NONE
+        unit = SpaceUnits.from_name(self._spatial_units.currentText())
+        if unit is None:
+            unit = SpaceUnits.NONE
         for layer in self._viewer.layers:
             if extras := extra_metadata(layer):
-                extras.set_space_unit(space_unit)
+                extras.set_space_unit(unit)
 
     def _on_temporal_units_changed(self) -> None:
-        time_unit = TimeUnits.from_name(self._temporal_units.currentText())
-        if time_unit is None:
-            time_unit = TimeUnits.NONE
+        unit = TimeUnits.from_name(self._temporal_units.currentText())
+        if unit is None:
+            unit = TimeUnits.NONE
         for layer in self._viewer.layers:
             if extras := extra_metadata(layer):
-                extras.set_time_unit(time_unit)
+                extras.set_time_unit(unit)
 
     def _on_restore_clicked(self) -> None:
         assert self._selected_layer is not None
@@ -166,7 +163,6 @@ class EditableMetadataWidget(QWidget):
                 layer.name = name
             if scale := original.scale:
                 layer.scale = scale
-            # TODO: refactor with _on_selected_layers_changed
             self._spatial_units.set_selected_layer(layer)
             self._axes_widget.set_selected_layer(layer)
             time_unit = str(extra_metadata(layer).get_time_unit())
@@ -279,7 +275,6 @@ class ReadOnlyMetadataWidget(QWidget):
         return widget
 
     def _on_selected_layer_name_changed(self, event) -> None:
-        # TODO: find a more reliable way to do this.
         self.name.setText(event.source.name)
 
     def _on_selected_layer_data_changed(self, event) -> None:

@@ -147,7 +147,6 @@ class AxesNameTypeWidget(QWidget):
             extras = extra_metadata(layer)
             space_unit = extras.get_space_unit()
             time_unit = extras.get_time_unit()
-            extras = extra_metadata(layer)
             for i in range(layer.ndim):
                 widget = axis_widgets[i + ndim - layer.ndim]
                 extras.axes[i] = widget.to_axis(
