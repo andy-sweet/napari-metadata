@@ -1,5 +1,5 @@
 name: napari-metadata
-display_name: Metadata
+display_name: Layer metadata
 contributions:
   commands:
     - id: napari-metadata.make_cells_3d_sample_data
@@ -9,8 +9,8 @@ contributions:
       python_name: napari_metadata._sample_data:make_nuclei_md_sample_data
       title: Load 2+3D nuclei with metadata
     - id: napari-metadata.make_metadata_qwidget
-      python_name: napari_metadata._widget:QMetadataWidget
-      title: Make metadata Qt widget
+      python_name: napari_metadata._widget:MetadataWidget
+      title: Make metadata widget
     - id: napari-metadata.read_image
       python_name: napari_metadata._reader:napari_get_reader
       title: Read image with metadata

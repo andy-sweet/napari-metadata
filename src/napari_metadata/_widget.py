@@ -301,10 +301,10 @@ class InfoWidget(QWidget):
         self.setLayout(layout)
 
 
-class QMetadataWidget(QStackedWidget):
+class MetadataWidget(QStackedWidget):
     def __init__(self, napari_viewer: "ViewerModel"):
         super().__init__()
-        self.viewer = napari_viewer
+        self._viewer = napari_viewer
         self._selected_layer = None
 
         self._info_widget = InfoWidget()
@@ -335,7 +335,7 @@ class QMetadataWidget(QStackedWidget):
             self._readonly_widget.set_temporal_units
         )
 
-        self.viewer.layers.selection.events.changed.connect(
+        self._viewer.layers.selection.events.changed.connect(
             self._on_selected_layers_changed
         )
 
@@ -349,8 +349,8 @@ class QMetadataWidget(QStackedWidget):
 
     def _on_selected_layers_changed(self) -> None:
         layer = None
-        if len(self.viewer.layers.selection) == 1:
-            layer = next(iter(self.viewer.layers.selection))
+        if len(self._viewer.layers.selection) == 1:
+            layer = next(iter(self._viewer.layers.selection))
 
         if layer is None:
             self.setCurrentWidget(self._info_widget)
@@ -363,7 +363,7 @@ class QMetadataWidget(QStackedWidget):
             return
 
         if layer is not None:
-            coerce_extra_metadata(self.viewer, layer)
+            coerce_extra_metadata(self._viewer, layer)
 
         self._readonly_widget.set_selected_layer(layer)
         self._editable_widget.set_selected_layer(layer)
@@ -373,5 +373,5 @@ class QMetadataWidget(QStackedWidget):
     def _remove_dock_widget(self) -> None:
         # TODO: make this less fragile, but also don't require a full
         # viewer for tests.
-        if window := getattr(self.viewer, "window", None):
+        if window := getattr(self._viewer, "window", None):
             window.remove_dock_widget(self)
