@@ -4,7 +4,7 @@ import numpy as np
 from napari.components import ViewerModel
 from napari.layers import Image
 
-from napari_metadata import QMetadataWidget
+from napari_metadata import MetadataWidget
 from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
 from napari_metadata._axis_type import AxisType
 from napari_metadata._model import (
@@ -380,15 +380,15 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
     assert widget._editable_widget._temporal_units.currentText() == "second"
 
 
-def axes_widget(widget: QMetadataWidget) -> AxesNameTypeWidget:
+def axes_widget(widget: MetadataWidget) -> AxesNameTypeWidget:
     return widget._editable_widget._axes_widget
 
 
-def axis_names(widget: QMetadataWidget) -> Tuple[str, ...]:
+def axis_names(widget: MetadataWidget) -> Tuple[str, ...]:
     return axes_widget(widget).axis_names()
 
 
-def are_axis_widgets_visible(widget: QMetadataWidget) -> Tuple[bool, ...]:
+def are_axis_widgets_visible(widget: MetadataWidget) -> Tuple[bool, ...]:
     axes_widget = widget._editable_widget._axes_widget
     return tuple(
         map(lambda w: w.isVisibleTo(widget), axes_widget.axis_widgets())
@@ -397,15 +397,15 @@ def are_axis_widgets_visible(widget: QMetadataWidget) -> Tuple[bool, ...]:
 
 def make_metadata_widget(
     qtbot: "QtBot", viewer: ViewerModel
-) -> QMetadataWidget:
-    widget = QMetadataWidget(viewer)
+) -> MetadataWidget:
+    widget = MetadataWidget(viewer)
     qtbot.addWidget(widget)
     return widget
 
 
 def make_viewer_with_one_image_and_widget(
     qtbot: "QtBot",
-) -> Tuple[ViewerModel, QMetadataWidget]:
+) -> Tuple[ViewerModel, MetadataWidget]:
     viewer = ViewerModel()
     viewer.add_image(np.empty((4, 3)))
     assert viewer.layers.selection == {viewer.layers[0]}
