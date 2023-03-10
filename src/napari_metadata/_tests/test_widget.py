@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, Tuple
 
+import npe2
 import numpy as np
+import pytest
 from napari.components import ViewerModel
 from napari.layers import Image
 
@@ -18,8 +20,15 @@ from napari_metadata._model import (
     extra_metadata,
 )
 
+from .._writer import write_image
+
 if TYPE_CHECKING:
     from pytestqt.qtbot import QtBot
+
+
+@pytest.fixture
+def path(tmp_path) -> str:
+    return str(tmp_path / "test.zarr")
 
 
 def test_init_with_no_layers(qtbot: "QtBot"):
@@ -378,6 +387,29 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
     assert viewer.scale_bar.unit == "millimeter"
     assert widget._editable_widget._spatial_units.currentText() == "millimeter"
     assert widget._editable_widget._temporal_units.currentText() == "second"
+
+
+def test_save_button_disabled(qtbot: "QtBot"):
+    viewer = ViewerModel()
+    widget = make_metadata_widget(qtbot, viewer)
+
+    viewer.add_image(np.zeros((4, 3)))
+
+    assert not widget._editable_widget._save_button.isEnabled()
+
+
+def test_save_button_enabled(qtbot: "QtBot", path):
+    pm = npe2.PluginManager.instance()
+    pm.register(npe2.PluginManifest.from_distribution("napari-metadata"))
+    viewer = ViewerModel()
+    widget = make_metadata_widget(qtbot, viewer)
+    image = Image(np.zeros((4, 3)))
+    data, metadata, _ = image.as_layer_data_tuple()
+    write_image(path, data, metadata)
+
+    viewer.open(path, plugin="napari-metadata")
+
+    assert widget._editable_widget._save_button.isEnabled()
 
 
 def axes_widget(widget: MetadataWidget) -> AxesNameTypeWidget:

@@ -26,6 +26,7 @@ from napari_metadata._space_units import SpaceUnits
 from napari_metadata._spatial_units_combo_box import SpatialUnitsComboBox
 from napari_metadata._time_units import TimeUnits
 from napari_metadata._widget_utils import readonly_lineedit
+from napari_metadata._writer import overwrite_metadata, writable_image_group
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -98,7 +99,7 @@ class EditableMetadataWidget(QWidget):
         self.cancel_button = QPushButton("Cancel")
         control_layout.addWidget(self.cancel_button)
         self._save_button = QPushButton("Save")
-        self._save_button.setEnabled(False)
+        self._save_button.clicked.connect(self._on_save_clicked)
         control_layout.addWidget(self._save_button)
 
         layout.addWidget(self._control_widget)
@@ -119,6 +120,10 @@ class EditableMetadataWidget(QWidget):
             layer.events.name.connect(self._on_selected_layer_name_changed)
             time_unit = str(extra_metadata(layer).get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
+
+        self._save_button.setEnabled(
+            layer is not None and writable_image_group(layer) is not None
+        )
 
         self._spacing_widget.set_selected_layer(layer)
 
@@ -167,6 +172,10 @@ class EditableMetadataWidget(QWidget):
             self._axes_widget.set_selected_layer(layer)
             time_unit = str(extra_metadata(layer).get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
+
+    def _on_save_clicked(self) -> None:
+        assert self._selected_layer is not None
+        overwrite_metadata(self._selected_layer)
 
 
 class ReadOnlyMetadataWidget(QWidget):
