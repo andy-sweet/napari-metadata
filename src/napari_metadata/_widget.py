@@ -121,9 +121,16 @@ class EditableMetadataWidget(QWidget):
             time_unit = str(extra_metadata(layer).get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
 
-        self._save_button.setEnabled(
-            layer is not None and writable_image_group(layer) is not None
-        )
+            try:
+                _ = writable_image_group(layer)
+                self._save_button.setEnabled(True)
+                self._save_button.setToolTip("Overwrite metadata file")
+            except ValueError as e:
+                readonly_reason = str(e)
+                self._save_button.setEnabled(False)
+                self._save_button.setToolTip(
+                    "Read-only metadata because " + readonly_reason
+                )
 
         self._spacing_widget.set_selected_layer(layer)
 

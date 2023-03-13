@@ -44,33 +44,63 @@ def write_image(
     return [path]
 
 
-def writable_image_group(layer: "Layer") -> Optional[zarr.Group]:
+def get_readonly_reason(layer: "Layer") -> Optional[str]:
+    try:
+        _ = writable_image_group(layer)
+    except ValueError as e:
+        return str(e)
+    return None
+
+
+def writable_image_group(layer: "Layer") -> zarr.Group:
     source = layer.source
     reader = source.reader_plugin
-    # We need write access to the zarr group that was read with this plugin.
     if reader != "napari-metadata":
-        return
+        raise ValueError(
+            "the layer was not opened with the napari-metadata plugin"
+        )
     path = source.path
     if path is None:
-        return
+        raise ValueError("the layer was not read from a path")
     location = parse_url(path, mode="w")
     if location is None:
-        return
-    return zarr.group(store=location.store)
+        raise ValueError(
+            "the layer's path was not recognized as a writable zarr"
+        )
+
+    group = zarr.group(store=location.store)
+
+    multiscales = group.attrs.get("multiscales")
+    if (multiscales is None) or (len(multiscales) != 1):
+        raise ValueError("the layer is not an ome-zarr multiscale image")
+    multiscale = multiscales[0]
+
+    data, attributes, _ = layer.as_layer_data_tuple()
+    metadata = multiscales_metadata(data, attributes)
+
+    datasets = multiscale["datasets"]
+    num_levels_layer = len(metadata.transforms)
+    num_levels_zarr = len(datasets)
+    if num_levels_layer != num_levels_zarr:
+        raise ValueError(
+            "the number of multiscale levels in the layer "
+            f"({num_levels_layer}) is different to that of the ome-zarr "
+            f"({num_levels_zarr})"
+        )
+
+    num_axes_layer = len(metadata.axes)
+    num_axes_zarr = len(multiscale["axes"])
+    if num_axes_layer != num_axes_zarr:
+        raise ValueError(
+            f"the number of axes in the layer ({num_axes_layer})"
+            "is different to that of the ome-zarr ({num_axes_zarr})"
+        )
+
+    return group
 
 
 def overwrite_metadata(layer: "Layer") -> None:
     group = writable_image_group(layer)
-    if group is None:
-        return
-
-    multiscales = group.attrs.get("multiscales")
-    if multiscales is None:
-        return
-
-    # We only expect one multiscale image in the group.
-    if len(multiscales) != 1:
-        return
 
     # Now everything looks good, lets extract the layer's updated metadata.
     data, attributes, _ = layer.as_layer_data_tuple()
@@ -80,8 +110,8 @@ def overwrite_metadata(layer: "Layer") -> None:
     # NB: this is potentially lossy since napari does not have a transform
     # sequence associated with a layer, so we may want to back out here
     # in some cases.
+    multiscales = group.attrs.get("multiscales")
     datasets = multiscales[0]["datasets"]
-    assert len(metadata.transforms) == len(datasets)
     for i in range(len(datasets)):
         datasets[i]["coordinateTransformations"] = metadata.transforms[i]
 

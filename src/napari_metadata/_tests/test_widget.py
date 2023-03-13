@@ -389,7 +389,7 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
     assert widget._editable_widget._temporal_units.currentText() == "second"
 
 
-def test_save_button_disabled(qtbot: "QtBot"):
+def test_save_button_disabled_with_arbitrary_image(qtbot: "QtBot"):
     viewer = ViewerModel()
     widget = make_metadata_widget(qtbot, viewer)
 
@@ -398,7 +398,25 @@ def test_save_button_disabled(qtbot: "QtBot"):
     assert not widget._editable_widget._save_button.isEnabled()
 
 
-def test_save_button_enabled(qtbot: "QtBot", path):
+def test_save_button_disabled_with_ome_zarr_read_by_builtin(
+    qtbot: "QtBot", path
+):
+    pm = npe2.PluginManager.instance()
+    pm.register(npe2.PluginManifest.from_distribution("napari"))
+    viewer = ViewerModel()
+    widget = make_metadata_widget(qtbot, viewer)
+    image = Image(np.zeros((4, 3)))
+    data, metadata, _ = image.as_layer_data_tuple()
+    write_image(path, data, metadata)
+
+    viewer.open(path, plugin="napari")
+
+    assert not widget._editable_widget._save_button.isEnabled()
+
+
+def test_save_button_enabled_with_ome_zarr_read_with_this_plugin(
+    qtbot: "QtBot", path
+):
     pm = npe2.PluginManager.instance()
     pm.register(npe2.PluginManifest.from_distribution("napari-metadata"))
     viewer = ViewerModel()
