@@ -327,6 +327,7 @@ def test_restore_defaults(qtbot: "QtBot"):
         widget._editable_widget._temporal_units.currentText() != "nanosecond"
     )
 
+    widget._editable_widget._restore_defaults.setEnabled(True)
     widget._editable_widget._restore_defaults.click()
 
     assert layer.name == metadata.original.name
