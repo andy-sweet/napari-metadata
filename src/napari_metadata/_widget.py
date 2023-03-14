@@ -21,7 +21,11 @@ from napari_metadata._axes_spacing_widget import (
     AxesSpacingWidget,
     ReadOnlyAxesSpacingWidget,
 )
-from napari_metadata._model import coerce_extra_metadata, extra_metadata
+from napari_metadata._model import (
+    coerce_extra_metadata,
+    extra_metadata,
+    is_metadata_equal_to_original,
+)
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._spatial_units_combo_box import SpatialUnitsComboBox
 from napari_metadata._time_units import TimeUnits
@@ -74,7 +78,13 @@ class EditableMetadataWidget(QWidget):
         restore_layout.addStretch(1)
         self._restore_defaults = QPushButton("Restore defaults")
         self._restore_defaults.setStyleSheet(
-            "QPushButton {" "color: #898D93;" "background: transparent;" "}"
+            "QPushButton {"
+            "color: #898D93;"
+            "background: transparent;"
+            "}"
+            "QPushButton::enabled {"
+            "color: #66C1FF;"
+            "}"
         )
         self._restore_defaults.clicked.connect(self._on_restore_clicked)
         restore_layout.addWidget(self._restore_defaults)
@@ -103,6 +113,10 @@ class EditableMetadataWidget(QWidget):
 
         layout.addWidget(self._control_widget)
 
+        self._viewer.dims.events.axis_labels.connect(
+            self._update_restore_enabled
+        )
+
     def set_selected_layer(self, layer: Optional["Layer"]) -> None:
         if layer == self._selected_layer:
             return
@@ -111,18 +125,23 @@ class EditableMetadataWidget(QWidget):
             self._selected_layer.events.name.disconnect(
                 self._on_selected_layer_name_changed
             )
+            self._selected_layer.events.scale.disconnect(
+                self._update_restore_enabled
+            )
 
         if layer is not None:
             self._spatial_units.set_selected_layer(layer)
             self._axes_widget.set_selected_layer(layer)
             self.name.setText(layer.name)
             layer.events.name.connect(self._on_selected_layer_name_changed)
+            layer.events.scale.connect(self._update_restore_enabled)
             time_unit = str(extra_metadata(layer).get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
 
         self._spacing_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
+        self._update_restore_enabled()
 
     def _add_attribute_row(self, name: str, widget: QWidget) -> None:
         layout = self._attribute_widget.layout()
@@ -136,6 +155,7 @@ class EditableMetadataWidget(QWidget):
     def _on_name_changed(self) -> None:
         if self._selected_layer is not None:
             self._selected_layer.name = self.name.text()
+        self._update_restore_enabled()
 
     def _on_spatial_units_changed(self) -> None:
         unit = SpaceUnits.from_name(self._spatial_units.currentText())
@@ -144,6 +164,7 @@ class EditableMetadataWidget(QWidget):
         for layer in self._viewer.layers:
             if extras := extra_metadata(layer):
                 extras.set_space_unit(unit)
+        self._update_restore_enabled()
 
     def _on_temporal_units_changed(self) -> None:
         unit = TimeUnits.from_name(self._temporal_units.currentText())
@@ -152,6 +173,7 @@ class EditableMetadataWidget(QWidget):
         for layer in self._viewer.layers:
             if extras := extra_metadata(layer):
                 extras.set_time_unit(unit)
+        self._update_restore_enabled()
 
     def _on_restore_clicked(self) -> None:
         assert self._selected_layer is not None
@@ -167,6 +189,10 @@ class EditableMetadataWidget(QWidget):
             self._axes_widget.set_selected_layer(layer)
             time_unit = str(extra_metadata(layer).get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
+
+    def _update_restore_enabled(self) -> None:
+        enabled = not is_metadata_equal_to_original(self._selected_layer)
+        self._restore_defaults.setEnabled(enabled)
 
 
 class ReadOnlyMetadataWidget(QWidget):

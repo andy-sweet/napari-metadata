@@ -131,3 +131,20 @@ def coerce_extra_metadata(viewer: "ViewerModel", layer: "Layer") -> None:
         axes=axes,
         original=original,
     )
+
+
+def is_metadata_equal_to_original(layer: Optional["Layer"]) -> bool:
+    if layer is None:
+        return False
+    extras = extra_metadata(layer)
+    if extras is None:
+        return False
+    if extras.original is None:
+        return False
+    if tuple(extras.axes) != extras.original.axes:
+        return False
+    if tuple(layer.scale) != extras.original.scale:
+        return False
+    if layer.name != extras.original.name:
+        return False
+    return True
