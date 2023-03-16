@@ -1,8 +1,17 @@
 from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
+import pytest
 from napari.components import ViewerModel
-from napari.layers import Image
+from napari.layers import (
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 
 from napari_metadata import MetadataWidget
 from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
@@ -22,6 +31,28 @@ if TYPE_CHECKING:
     from pytestqt.qtbot import QtBot
 
 
+@pytest.fixture(
+    scope="module",
+    params=[
+        (Image, {"data": np.zeros((4, 3))}),
+        (Image, {"data": np.zeros((5, 4, 3), dtype=np.uint8), "rgb": True}),
+        (Labels, {"data": np.zeros((4, 3), dtype=int)}),
+        (Points, {"data": np.zeros((1, 2))}),
+        (Shapes, {"data": [np.zeros((4, 2))]}),
+        (Vectors, {"data": np.zeros((1, 2, 2))}),
+        (Tracks, {"data": np.zeros((1, 4))}),
+        (
+            Surface,
+            {"data": (np.zeros((3, 3)), np.array([[0, 1, 2]], dtype=int))},
+        ),
+    ],
+    ids=lambda param: param[0].__name__,
+)
+def layer(request):
+    Type, kwargs = request.param
+    return Type(**kwargs)
+
+
 def test_init_with_no_layers(qtbot: "QtBot"):
     viewer = ViewerModel()
     assert viewer.layers.selection == set()
@@ -31,26 +62,16 @@ def test_init_with_no_layers(qtbot: "QtBot"):
     assert widget.currentWidget() is widget._info_widget
 
 
-def test_init_with_one_selected_2d_image(qtbot: "QtBot"):
+def test_init_with_one_selected_layer(qtbot: "QtBot", layer):
     viewer = ViewerModel()
-    viewer.add_image(np.empty((4, 3)))
-    assert viewer.layers.selection == {viewer.layers[0]}
+    viewer.add_layer(layer)
+    assert viewer.layers.selection == {layer}
 
     widget = make_metadata_widget(qtbot, viewer)
 
-    assert axis_names(widget) == ("0", "1")
-    assert are_axis_widgets_visible(widget) == (True, True)
-
-
-def test_init_with_one_selected_2d_rgb_image(qtbot: "QtBot"):
-    viewer = ViewerModel()
-    viewer.add_image(np.empty((5, 4, 3)), rgb=True)
-    assert viewer.layers.selection == {viewer.layers[0]}
-
-    widget = make_metadata_widget(qtbot, viewer)
-
-    assert axis_names(widget) == ("0", "1")
-    assert are_axis_widgets_visible(widget) == (True, True)
+    assert widget.currentWidget() is widget._editable_widget
+    assert axis_names(widget) == tuple(str(d) for d in range(layer.ndim))
+    assert are_axis_widgets_visible(widget) == (True,) * layer.ndim
 
 
 def test_init_with_one_unselected_2d_image_and_one_selected_3d_image(

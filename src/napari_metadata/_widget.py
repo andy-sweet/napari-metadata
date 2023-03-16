@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from qtpy.QtWidgets import (
     QComboBox,
@@ -267,9 +267,9 @@ class ReadOnlyMetadataWidget(QWidget):
         if layer is not None:
             self.name.setText(layer.name)
             self.file_path.setText(str(layer.source.path))
-            self.plugin.setText(self._get_plugin_info(layer))
-            self.data_shape.setText(str(layer.data.shape))
-            self.data_type.setText(str(layer.data.dtype))
+            self.plugin.setText(_layer_plugin_info(layer))
+            self.data_shape.setText(_layer_data_shape(layer))
+            self.data_type.setText(_layer_data_dtype(layer))
             extras = extra_metadata(layer)
             self.spatial_units.setText(str(extras.get_space_unit()))
             self.temporal_units.setText(str(extras.get_time_unit()))
@@ -303,18 +303,10 @@ class ReadOnlyMetadataWidget(QWidget):
     def _on_selected_layer_name_changed(self, event) -> None:
         self.name.setText(event.source.name)
 
-    def _on_selected_layer_data_changed(self, event) -> None:
-        data = event.value
-        self.data_shape.setText(str(data.shape))
-        self.data_type.setText(str(data.dtype))
-
-    def _get_plugin_info(self, layer: "Layer") -> str:
-        source = layer.source
-        return (
-            str(source.reader_plugin)
-            if source.sample is None
-            else str(source.sample)
-        )
+    def _on_selected_layer_data_changed(self) -> None:
+        assert (layer := self._selected_layer)
+        self.data_shape.setText(_layer_data_shape(layer))
+        self.data_type.setText(_layer_data_dtype(layer))
 
 
 class InfoWidget(QWidget):
@@ -401,3 +393,34 @@ class MetadataWidget(QStackedWidget):
         # viewer for tests.
         if window := getattr(self._viewer, "window", None):
             window.remove_dock_widget(self)
+
+
+def _layer_plugin_info(layer: "Layer") -> str:
+    source = layer.source
+    return (
+        str(source.reader_plugin)
+        if source.sample is None
+        else str(source.sample)
+    )
+
+
+def _layer_data_shape(layer: "Layer") -> str:
+    data = layer.data
+    if hasattr(data, "shape"):
+        return str(data.shape)
+    if isinstance(data, Sequence):
+        return f"{(len(data),)}"
+    return "Unknown"
+
+
+def _layer_data_dtype(layer: "Layer") -> str:
+    data = layer.data
+    if hasattr(data, "dtype"):
+        return str(data.dtype)
+    if (
+        isinstance(data, Sequence)
+        and len(data) > 0
+        and hasattr(data[0], "dtype")
+    ):
+        return str(data[0].dtype)
+    return "Unknown"
