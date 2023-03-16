@@ -409,11 +409,7 @@ def _layer_data_shape(layer: "Layer") -> str:
     if hasattr(data, "shape"):
         return str(data.shape)
     if isinstance(data, Sequence):
-        return str(
-            len(
-                data,
-            )
-        )
+        return f"{(len(data),)}"
     return "Unknown"
 
 
