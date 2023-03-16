@@ -303,10 +303,10 @@ class ReadOnlyMetadataWidget(QWidget):
     def _on_selected_layer_name_changed(self, event) -> None:
         self.name.setText(event.source.name)
 
-    def _on_selected_layer_data_changed(self, event) -> None:
-        data = event.value
-        self.data_shape.setText(str(data.shape))
-        self.data_type.setText(str(data.dtype))
+    def _on_selected_layer_data_changed(self) -> None:
+        assert (layer := self._selected_layer)
+        self.data_shape.setText(_layer_data_shape(layer))
+        self.data_type.setText(_layer_data_dtype(layer))
 
 
 class InfoWidget(QWidget):
