@@ -1,6 +1,7 @@
 from copy import deepcopy
 from typing import TYPE_CHECKING, Optional, Sequence
 
+from qtpy.QtGui import QShowEvent
 from qtpy.QtWidgets import (
     QComboBox,
     QGridLayout,
@@ -358,6 +359,12 @@ class MetadataWidget(QStackedWidget):
         )
 
         self._on_selected_layers_changed()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        self._viewer.axes.colored = False
+        self._viewer.axes.visible = True
+        self._viewer.scale_bar.visible = True
+        return super().showEvent(event)
 
     def _show_readonly(self) -> None:
         self.setCurrentWidget(self._readonly_widget)
