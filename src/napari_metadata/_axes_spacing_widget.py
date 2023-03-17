@@ -15,6 +15,16 @@ if TYPE_CHECKING:
     from napari.layers import Layer
 
 
+def make_double_spinbox(value: float, *, lower: float) -> QDoubleSpinBox:
+    spinbox = QDoubleSpinBox()
+    spinbox.setDecimals(6)
+    spinbox.setMinimum(lower)
+    spinbox.setValue(value)
+    spinbox.setSingleStep(0.1)
+    spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+    return spinbox
+
+
 class AxisSpacingWidget(QWidget):
     """Shows and controls one axis' name and spacing."""
 
@@ -22,19 +32,14 @@ class AxisSpacingWidget(QWidget):
         super().__init__(parent)
         self.name = readonly_lineedit()
 
-        self.spacing = QDoubleSpinBox()
-        self.spacing.setDecimals(6)
-        self.spacing.setRange(1e-6, 1e6)
-        self.spacing.setValue(1)
-        self.spacing.setStepType(
-            QAbstractSpinBox.StepType.AdaptiveDecimalStepType
-        )
-        self.spacing.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.spacing = make_double_spinbox(1, lower=1e-6)
+        self.translate = make_double_spinbox(0, lower=-1e6)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.name)
         layout.addWidget(self.spacing)
+        layout.addWidget(self.translate)
         self.setLayout(layout)
 
 
@@ -71,8 +76,12 @@ class AxesSpacingWidget(QWidget):
         old_layer = self._layer
         if old_layer is not None:
             old_layer.events.scale.disconnect(self._on_layer_scale_changed)
+            old_layer.events.translate.disconnect(
+                self._on_layer_translate_changed
+            )
         if layer is not None:
             layer.events.scale.connect(self._on_layer_scale_changed)
+            layer.events.translate.connect(self._on_layer_translate_changed)
         self._layer = layer
         if self._layer is not None:
             self._on_layer_scale_changed()
@@ -92,9 +101,20 @@ class AxesSpacingWidget(QWidget):
         for s, w in zip(scale, widgets):
             w.spacing.setValue(s)
 
+    def _on_layer_translate_changed(self) -> None:
+        assert self._layer is not None
+        translate = self._layer.translate
+        widgets = self._layer_widgets()
+        for t, w in zip(translate, widgets):
+            w.translate.setValue(t)
+
     def _on_pixel_size_changed(self) -> None:
         scale = tuple(w.spacing.value() for w in self._layer_widgets())
         self._layer.scale = scale
+
+    def _on_translate_changed(self) -> None:
+        translate = tuple(w.translate.value() for w in self._layer_widgets())
+        self._layer.translate = translate
 
     def _axis_widgets(self) -> Tuple[AxisSpacingWidget, ...]:
         layout = self.layout()
@@ -115,6 +135,7 @@ class AxesSpacingWidget(QWidget):
     def _make_axis_spacing_widget(self) -> AxisSpacingWidget:
         widget = AxisSpacingWidget(self)
         widget.spacing.valueChanged.connect(self._on_pixel_size_changed)
+        widget.translate.valueChanged.connect(self._on_translate_changed)
         return widget
 
 
