@@ -303,15 +303,29 @@ def test_set_time_unit(qtbot: "QtBot"):
 def test_set_layer_scale(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
-    assert layer.scale[0] == 1
     pixel_width_widget = (
         widget._editable_widget._spacing_widget._axis_widgets()[0].spacing
     )
+    assert layer.scale[0] == pixel_width_widget.value()
     assert pixel_width_widget.value() != 4.5
 
     layer.scale = (4.5, layer.scale[1])
 
     assert pixel_width_widget.value() == 4.5
+
+
+def test_set_layer_translate(qtbot: "QtBot"):
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
+    layer = viewer.layers[0]
+    translate_widget = widget._editable_widget._spacing_widget._axis_widgets()[
+        0
+    ].translate
+    assert layer.translate[0] == translate_widget.value()
+    assert translate_widget.value() != -2
+
+    layer.translate = (-2, layer.translate[1])
+
+    assert translate_widget.value() == -2
 
 
 def test_set_pixel_size(qtbot: "QtBot"):
@@ -320,12 +334,26 @@ def test_set_pixel_size(qtbot: "QtBot"):
     pixel_width_widget = (
         widget._editable_widget._spacing_widget._axis_widgets()[0].spacing
     )
-    assert pixel_width_widget.value() == 1
+    assert pixel_width_widget.value() == layer.scale[0]
     assert layer.scale[0] != 4.5
 
     pixel_width_widget.setValue(4.5)
 
     assert layer.scale[0] == 4.5
+
+
+def test_set_translate(qtbot: "QtBot"):
+    viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
+    layer = viewer.layers[0]
+    translate_widget = widget._editable_widget._spacing_widget._axis_widgets()[
+        0
+    ].translate
+    assert translate_widget.value() == layer.translate[0]
+    assert layer.translate[0] != -2
+
+    translate_widget.setValue(-2)
+
+    assert layer.translate[0] == -2
 
 
 def test_restore_defaults(qtbot: "QtBot"):
@@ -413,7 +441,10 @@ def axis_names(widget: MetadataWidget) -> Tuple[str, ...]:
 def are_axis_widgets_visible(widget: MetadataWidget) -> Tuple[bool, ...]:
     axes_widget = widget._editable_widget._axes_widget
     return tuple(
-        map(lambda w: w.isVisibleTo(widget), axes_widget.axis_widgets())
+        map(
+            lambda row: row.name.isVisibleTo(widget),
+            axes_widget.axis_widgets(),
+        )
     )
 
 

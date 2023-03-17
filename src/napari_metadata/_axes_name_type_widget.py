@@ -1,12 +1,6 @@
-from typing import TYPE_CHECKING, Optional, Tuple, cast
+from typing import TYPE_CHECKING, List, Tuple
 
-from qtpy.QtWidgets import (
-    QComboBox,
-    QHBoxLayout,
-    QLineEdit,
-    QVBoxLayout,
-    QWidget,
-)
+from qtpy.QtWidgets import QComboBox, QGridLayout, QLabel, QLineEdit, QWidget
 
 from napari_metadata._axis_type import AxisType
 from napari_metadata._model import (
@@ -18,27 +12,25 @@ from napari_metadata._model import (
 )
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._time_units import TimeUnits
-from napari_metadata._widget_utils import readonly_lineedit, update_num_widgets
+from napari_metadata._widget_utils import (
+    readonly_lineedit,
+    set_row_visible,
+    update_num_rows,
+)
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
     from napari.layers import Layer
 
 
-class AxisNameTypeWidget(QWidget):
-    """Shows and controls one axis' name and type."""
-
-    def __init__(self, parent: Optional["QWidget"]) -> None:
-        super().__init__(parent)
-        self.name = QLineEdit()
-        self.type = QComboBox()
+class AxisNameTypeRow:
+    def __init__(self) -> None:
+        self.name: QLineEdit = QLineEdit()
+        self.type: QComboBox = QComboBox()
         self.type.addItems(AxisType.names())
 
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.name)
-        layout.addWidget(self.type)
-        self.setLayout(layout)
+    def widgets(self) -> Tuple[QWidget, ...]:
+        return (self.name, self.type)
 
     def to_axis(
         self,
@@ -60,9 +52,14 @@ class AxesNameTypeWidget(QWidget):
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer
+        self._rows: List[AxisNameTypeRow] = []
 
-        layout = QVBoxLayout()
+        layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+
+        layout.addWidget(QLabel("Name"), 0, 0)
+        layout.addWidget(QLabel("Type"), 0, 1)
+
         self.setLayout(layout)
 
         self._viewer.dims.events.axis_labels.connect(
@@ -71,10 +68,11 @@ class AxesNameTypeWidget(QWidget):
 
     def set_selected_layer(self, layer: "Layer") -> None:
         dims = self._viewer.dims
-        update_num_widgets(
+        update_num_rows(
+            rows=self._rows,
             layout=self.layout(),
             desired_num=dims.ndim,
-            widget_factory=self._make_axis_widget,
+            row_factory=self._make_row,
         )
 
         names = self._get_layer_axis_names(layer)
@@ -88,11 +86,11 @@ class AxesNameTypeWidget(QWidget):
         ndim_diff = dims.ndim - layer.ndim
 
         extras = extra_metadata(layer)
-        for i, widget in enumerate(self.axis_widgets()):
-            widget.setVisible(i >= ndim_diff)
+        for i, row in enumerate(self._rows):
+            set_row_visible(row, i >= ndim_diff)
             if i >= ndim_diff:
                 axis = extras.axes[i - ndim_diff]
-                widget.type.setCurrentText(str(axis.get_type()))
+                row.type.setCurrentText(str(axis.get_type()))
 
     def _get_layer_axis_names(self, layer: "Layer") -> Tuple[str, ...]:
         viewer_names = list(self._viewer.dims.axis_labels)
@@ -100,18 +98,17 @@ class AxesNameTypeWidget(QWidget):
         viewer_names[-layer.ndim :] = layer_names  # noqa
         return tuple(viewer_names)
 
-    def _make_axis_widget(self) -> AxisNameTypeWidget:
-        widget = AxisNameTypeWidget(self)
+    def _make_row(self) -> AxisNameTypeRow:
+        widget = AxisNameTypeRow()
         widget.name.textChanged.connect(self._on_axis_name_changed)
         widget.type.currentTextChanged.connect(self._on_axis_type_changed)
         return widget
 
     def _on_viewer_dims_axis_labels_changed(self) -> None:
-        widgets = self.axis_widgets()
         names = self._viewer.dims.axis_labels
-        assert len(names) == len(widgets)
-        for name, widget in zip(names, widgets):
-            widget.name.setText(name)
+        assert len(names) == len(self._rows)
+        for name, row in zip(names, self._rows):
+            row.name.setText(name)
         for layer in self._viewer.layers:
             if extras := extra_metadata(layer):
                 axis_names = self._viewer.dims.axis_labels[
@@ -119,12 +116,8 @@ class AxesNameTypeWidget(QWidget):
                 ]
                 extras.set_axis_names(axis_names)
 
-    def axis_widgets(self) -> Tuple[AxisNameTypeWidget, ...]:
-        layout = self.layout()
-        return [
-            cast(AxisNameTypeWidget, layout.itemAt(i).widget())
-            for i in range(0, layout.count())
-        ]
+    def axis_widgets(self) -> Tuple[AxisNameTypeRow, ...]:
+        return tuple(self._rows)
 
     def axis_names(self) -> Tuple[str, ...]:
         return tuple(widget.name.text() for widget in self.axis_widgets())
@@ -147,19 +140,13 @@ class AxesNameTypeWidget(QWidget):
                 )
 
 
-class ReadOnlyAxisNameTypeWidget(QWidget):
-    """Shows one axis' name and type."""
+class ReadOnlyAxisNameTypeRow:
+    def __init__(self) -> None:
+        self.name: QLineEdit = readonly_lineedit()
+        self.type: QLineEdit = readonly_lineedit()
 
-    def __init__(self, parent: Optional["QWidget"]) -> None:
-        super().__init__(parent)
-        self.name = readonly_lineedit()
-        self.type = readonly_lineedit()
-
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.name)
-        layout.addWidget(self.type)
-        self.setLayout(layout)
+    def widgets(self) -> Tuple[QWidget, ...]:
+        return (self.name, self.type)
 
 
 class ReadOnlyAxesNameTypeWidget(QWidget):
@@ -168,9 +155,12 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer
+        self._rows: List[ReadOnlyAxisNameTypeRow] = []
 
-        layout = QVBoxLayout()
+        layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(QLabel("Name"), 0, 0)
+        layout.addWidget(QLabel("Type"), 0, 1)
         self.setLayout(layout)
 
         self._viewer.dims.events.axis_labels.connect(
@@ -179,34 +169,26 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
 
     def set_selected_layer(self, layer: "Layer") -> None:
         dims = self._viewer.dims
-        update_num_widgets(
+        update_num_rows(
+            rows=self._rows,
             layout=self.layout(),
             desired_num=dims.ndim,
-            widget_factory=lambda: ReadOnlyAxisNameTypeWidget(self),
+            row_factory=ReadOnlyAxisNameTypeRow,
         )
-
         ndim_diff = dims.ndim - layer.ndim
         extras = extra_metadata(layer)
-        for i, widget in enumerate(self._axis_widgets()):
-            widget.setVisible(i >= ndim_diff)
+        for i, row in enumerate(self._rows):
+            set_row_visible(row, i >= ndim_diff)
             if i >= ndim_diff:
                 axis = extras.axes[i - ndim_diff]
-                widget.name.setText(axis.name)
-                widget.type.setText(str(axis.get_type()))
+                row.name.setText(axis.name)
+                row.type.setText(str(axis.get_type()))
 
     def _on_viewer_dims_axis_labels_changed(self) -> None:
         self._set_axis_names(self._viewer.dims.axis_labels)
 
     def _set_axis_names(self, names: Tuple[str, ...]) -> None:
-        widgets = self._axis_widgets()
         names = self._viewer.dims.axis_labels
-        assert len(names) == len(widgets)
-        for name, widget in zip(names, widgets):
+        assert len(names) == len(self._rows)
+        for name, widget in zip(names, self._rows):
             widget.name.setText(name)
-
-    def _axis_widgets(self) -> Tuple[ReadOnlyAxisNameTypeWidget, ...]:
-        layout = self.layout()
-        return tuple(
-            cast(ReadOnlyAxisNameTypeWidget, layout.itemAt(i).widget())
-            for i in range(0, layout.count())
-        )
