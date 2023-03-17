@@ -12,33 +12,25 @@ from napari_metadata._model import (
 )
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._time_units import TimeUnits
-from napari_metadata._widget_utils import readonly_lineedit
+from napari_metadata._widget_utils import (
+    readonly_lineedit,
+    set_row_visible,
+    update_num_rows,
+)
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
     from napari.layers import Layer
 
 
-class AxisNameTypeWidget:
-    """Contains one axis' name and type."""
-
+class AxisNameTypeRow:
     def __init__(self) -> None:
-        self.name = QLineEdit()
-        self.type = QComboBox()
+        self.name: QLineEdit = QLineEdit()
+        self.type: QComboBox = QComboBox()
         self.type.addItems(AxisType.names())
 
-    def append_to_grid_layout(self, layout: QGridLayout) -> None:
-        row = layout.count()
-        layout.addWidget(self.name, row, 0)
-        layout.addWidget(self.type, row, 1)
-
-    def remove_from_grid_layout(self, layout: QGridLayout) -> None:
-        for w in (self.name, self.type):
-            layout.removeWidget(w)
-
-    def setVisible(self, visible: bool) -> None:
-        for w in (self.name, self.type):
-            w.setVisible(visible)
+    def widgets(self) -> Tuple[QWidget, ...]:
+        return (self.name, self.type)
 
     def to_axis(
         self,
@@ -60,7 +52,7 @@ class AxesNameTypeWidget(QWidget):
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer
-        self._widgets: List[AxisNameTypeWidget] = []
+        self._rows: List[AxisNameTypeRow] = []
 
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -76,7 +68,12 @@ class AxesNameTypeWidget(QWidget):
 
     def set_selected_layer(self, layer: "Layer") -> None:
         dims = self._viewer.dims
-        self._update_num_widgets(dims.ndim)
+        update_num_rows(
+            rows=self._rows,
+            layout=self.layout(),
+            desired_num=dims.ndim,
+            row_factory=self._make_row,
+        )
 
         names = self._get_layer_axis_names(layer)
         # TODO: given the current design we always need the event to be
@@ -89,23 +86,11 @@ class AxesNameTypeWidget(QWidget):
         ndim_diff = dims.ndim - layer.ndim
 
         extras = extra_metadata(layer)
-        for i, widget in enumerate(self.axis_widgets()):
-            widget.setVisible(i >= ndim_diff)
+        for i, row in enumerate(self._rows):
+            set_row_visible(row, i >= ndim_diff)
             if i >= ndim_diff:
                 axis = extras.axes[i - ndim_diff]
-                widget.type.setCurrentText(str(axis.get_type()))
-
-    def _update_num_widgets(self, desired_num: int) -> None:
-        current_num = len(self._widgets)
-        # Add any missing widgets.
-        for _ in range(desired_num - current_num):
-            widget = self._make_axis_widget()
-            widget.append_to_grid_layout(self.layout())
-            self._widgets.append(widget)
-        # Remove any unneeded widgets.
-        for _ in range(current_num - 1, desired_num - 1, -1):
-            widget = self._widgets.pop()
-            widget.remove_from_grid_layout(self.layout())
+                row.type.setCurrentText(str(axis.get_type()))
 
     def _get_layer_axis_names(self, layer: "Layer") -> Tuple[str, ...]:
         viewer_names = list(self._viewer.dims.axis_labels)
@@ -113,18 +98,17 @@ class AxesNameTypeWidget(QWidget):
         viewer_names[-layer.ndim :] = layer_names  # noqa
         return tuple(viewer_names)
 
-    def _make_axis_widget(self) -> AxisNameTypeWidget:
-        widget = AxisNameTypeWidget()
+    def _make_row(self) -> AxisNameTypeRow:
+        widget = AxisNameTypeRow()
         widget.name.textChanged.connect(self._on_axis_name_changed)
         widget.type.currentTextChanged.connect(self._on_axis_type_changed)
         return widget
 
     def _on_viewer_dims_axis_labels_changed(self) -> None:
-        widgets = self.axis_widgets()
         names = self._viewer.dims.axis_labels
-        assert len(names) == len(widgets)
-        for name, widget in zip(names, widgets):
-            widget.name.setText(name)
+        assert len(names) == len(self._rows)
+        for name, row in zip(names, self._rows):
+            row.name.setText(name)
         for layer in self._viewer.layers:
             if extras := extra_metadata(layer):
                 axis_names = self._viewer.dims.axis_labels[
@@ -132,8 +116,8 @@ class AxesNameTypeWidget(QWidget):
                 ]
                 extras.set_axis_names(axis_names)
 
-    def axis_widgets(self) -> Tuple[AxisNameTypeWidget, ...]:
-        return tuple(self._widgets)
+    def axis_widgets(self) -> Tuple[AxisNameTypeRow, ...]:
+        return tuple(self._rows)
 
     def axis_names(self) -> Tuple[str, ...]:
         return tuple(widget.name.text() for widget in self.axis_widgets())
@@ -156,25 +140,13 @@ class AxesNameTypeWidget(QWidget):
                 )
 
 
-class ReadOnlyAxisNameTypeWidgets:
-    """Contains one axis' name and type."""
-
+class ReadOnlyAxisNameTypeRow:
     def __init__(self) -> None:
-        self.name = readonly_lineedit()
-        self.type = readonly_lineedit()
+        self.name: QLineEdit = readonly_lineedit()
+        self.type: QLineEdit = readonly_lineedit()
 
-    def append_to_grid_layout(self, layout: QGridLayout) -> None:
-        row = layout.count()
-        layout.addWidget(self.name, row, 0)
-        layout.addWidget(self.type, row, 1)
-
-    def remove_from_grid_layout(self, layout: QGridLayout) -> None:
-        for w in (self.name, self.type):
-            layout.removeWidget(w)
-
-    def setVisible(self, visible: bool) -> None:
-        for w in (self.name, self.type):
-            w.setVisible(visible)
+    def widgets(self) -> Tuple[QWidget, ...]:
+        return (self.name, self.type)
 
 
 class ReadOnlyAxesNameTypeWidget(QWidget):
@@ -183,7 +155,7 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer
-        self._widgets: List[ReadOnlyAxisNameTypeWidgets] = []
+        self._rows: List[ReadOnlyAxisNameTypeRow] = []
 
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -197,37 +169,26 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
 
     def set_selected_layer(self, layer: "Layer") -> None:
         dims = self._viewer.dims
-        self._update_num_widgets(dims.ndim)
+        update_num_rows(
+            rows=self._rows,
+            layout=self.layout(),
+            desired_num=dims.ndim,
+            row_factory=ReadOnlyAxisNameTypeRow,
+        )
         ndim_diff = dims.ndim - layer.ndim
         extras = extra_metadata(layer)
-        for i, widget in enumerate(self._axis_widgets()):
-            widget.setVisible(i >= ndim_diff)
+        for i, row in enumerate(self._rows):
+            set_row_visible(row, i >= ndim_diff)
             if i >= ndim_diff:
                 axis = extras.axes[i - ndim_diff]
-                widget.name.setText(axis.name)
-                widget.type.setText(str(axis.get_type()))
-
-    def _update_num_widgets(self, desired_num: int) -> None:
-        current_num = len(self._widgets)
-        # Add any missing widgets.
-        for _ in range(desired_num - current_num):
-            widget = ReadOnlyAxisNameTypeWidgets()
-            widget.append_to_grid_layout(self.layout())
-            self._widgets.append(widget)
-        # Remove any unneeded widgets.
-        for _ in range(current_num - 1, desired_num - 1, -1):
-            widget = self._widgets.pop()
-            widget.remove_from_grid_layout(self.layout())
+                row.name.setText(axis.name)
+                row.type.setText(str(axis.get_type()))
 
     def _on_viewer_dims_axis_labels_changed(self) -> None:
         self._set_axis_names(self._viewer.dims.axis_labels)
 
     def _set_axis_names(self, names: Tuple[str, ...]) -> None:
-        widgets = self._axis_widgets()
         names = self._viewer.dims.axis_labels
-        assert len(names) == len(widgets)
-        for name, widget in zip(names, widgets):
+        assert len(names) == len(self._rows)
+        for name, widget in zip(names, self._rows):
             widget.name.setText(name)
-
-    def _axis_widgets(self) -> Tuple[AxisNameTypeWidget, ...]:
-        return tuple(self._widgets)

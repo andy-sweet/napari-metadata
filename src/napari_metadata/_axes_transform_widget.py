@@ -5,10 +5,15 @@ from qtpy.QtWidgets import (
     QDoubleSpinBox,
     QGridLayout,
     QLabel,
+    QLineEdit,
     QWidget,
 )
 
-from napari_metadata._widget_utils import readonly_lineedit
+from napari_metadata._widget_utils import (
+    readonly_lineedit,
+    set_row_visible,
+    update_num_rows,
+)
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -25,27 +30,14 @@ def make_double_spinbox(value: float, *, lower: float) -> QDoubleSpinBox:
     return spinbox
 
 
-class AxisTransformWidgets:
-    """Contains one axis' name, scale, and translate widgets."""
-
+class AxisTransformRow:
     def __init__(self) -> None:
         self.name = readonly_lineedit()
         self.spacing = make_double_spinbox(1, lower=1e-6)
         self.translate = make_double_spinbox(0, lower=-1e6)
 
-    def append_to_grid_layout(self, layout: QGridLayout) -> None:
-        row = layout.count()
-        layout.addWidget(self.name, row, 0)
-        layout.addWidget(self.spacing, row, 1)
-        layout.addWidget(self.translate, row, 2)
-
-    def remove_from_grid_layout(self, layout: QGridLayout) -> None:
-        for w in (self.name, self.spacing, self.translate):
-            layout.removeWidget(w)
-
-    def setVisible(self, visible: bool) -> None:
-        for w in (self.name, self.spacing, self.translate):
-            w.setVisible(visible)
+    def widgets(self) -> Tuple[QWidget, ...]:
+        return (self.name, self.spacing, self.translate)
 
 
 # TODO: reduce redundancy between this class and the AxesNameTypeWidget.
@@ -56,7 +48,7 @@ class AxesTransformWidget(QWidget):
         super().__init__()
         self._viewer: "ViewerModel" = viewer
         self._layer: Optional["Layer"] = None
-        self._widgets: List[AxisTransformWidgets] = []
+        self._rows: List[AxisTransformRow] = []
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -73,13 +65,18 @@ class AxesTransformWidget(QWidget):
 
     def set_selected_layer(self, layer: Optional["Layer"]) -> None:
         dims = self._viewer.dims
-        self._update_num_widgets(dims.ndim)
+        update_num_rows(
+            rows=self._rows,
+            layout=self.layout(),
+            desired_num=dims.ndim,
+            row_factory=self._make_row,
+        )
 
         self._set_axis_names(dims.axis_labels)
         layer_ndim = 0 if layer is None else layer.ndim
         ndim_diff = dims.ndim - layer_ndim
-        for i, widget in enumerate(self._axis_widgets()):
-            widget.setVisible(i >= ndim_diff)
+        for i, row in enumerate(self._axis_widgets()):
+            set_row_visible(row, i >= ndim_diff)
 
         old_layer = self._layer
         if old_layer is not None:
@@ -94,18 +91,6 @@ class AxesTransformWidget(QWidget):
         if self._layer is not None:
             self._on_layer_scale_changed()
             self._on_layer_translate_changed()
-
-    def _update_num_widgets(self, desired_num: int) -> None:
-        current_num = len(self._widgets)
-        # Add any missing widgets.
-        for _ in range(desired_num - current_num):
-            widget = self._make_axis_transform_widgets()
-            widget.append_to_grid_layout(self.layout())
-            self._widgets.append(widget)
-        # Remove any unneeded widgets.
-        for _ in range(current_num - 1, desired_num - 1, -1):
-            widget = self._widgets.pop()
-            widget.remove_from_grid_layout(self.layout())
 
     def _on_viewer_dims_axis_labels_changed(self) -> None:
         self._set_axis_names(self._viewer.dims.axis_labels)
@@ -137,44 +122,31 @@ class AxesTransformWidget(QWidget):
         translate = tuple(w.translate.value() for w in self._layer_widgets())
         self._layer.translate = translate
 
-    def _axis_widgets(self) -> Tuple[AxisTransformWidgets, ...]:
-        return tuple(self._widgets)
+    def _axis_widgets(self) -> Tuple[AxisTransformRow, ...]:
+        return tuple(self._rows)
 
-    def _layer_widgets(self) -> Tuple[AxisTransformWidgets, ...]:
+    def _layer_widgets(self) -> Tuple[AxisTransformRow, ...]:
         return (
             ()
             if self._layer is None
-            else tuple(self._widgets[-self._layer.ndim :])  # noqa
+            else tuple(self._rows[-self._layer.ndim :])  # noqa
         )
 
-    def _make_axis_transform_widgets(self) -> AxisTransformWidgets:
-        widget = AxisTransformWidgets()
+    def _make_row(self) -> AxisTransformRow:
+        widget = AxisTransformRow()
         widget.spacing.valueChanged.connect(self._on_pixel_size_changed)
         widget.translate.valueChanged.connect(self._on_translate_changed)
         return widget
 
 
-class ReadOnlyAxisTransformWidgets:
-    """Contains one axis' transform widgets."""
+class ReadOnlyAxisTransformRow:
+    def __init__(self):
+        self.name: QLineEdit = readonly_lineedit()
+        self.spacing: QLineEdit = readonly_lineedit()
+        self.translate: QLineEdit = readonly_lineedit()
 
-    def __init__(self) -> None:
-        self.name = readonly_lineedit()
-        self.spacing = readonly_lineedit()
-        self.translate = readonly_lineedit()
-
-    def append_to_grid_layout(self, layout: QGridLayout) -> None:
-        row = layout.count()
-        layout.addWidget(self.name, row, 0)
-        layout.addWidget(self.spacing, row, 1)
-        layout.addWidget(self.translate, row, 2)
-
-    def remove_from_grid_layout(self, layout: QGridLayout) -> None:
-        for w in (self.name, self.spacing, self.translate):
-            layout.removeWidget(w)
-
-    def setVisible(self, visible: bool) -> None:
-        for w in (self.name, self.spacing, self.translate):
-            w.setVisible(visible)
+    def widgets(self) -> Tuple[QWidget, ...]:
+        return (self.name, self.spacing, self.translate)
 
 
 class ReadOnlyAxesTransformWidget(QWidget):
@@ -184,7 +156,7 @@ class ReadOnlyAxesTransformWidget(QWidget):
         super().__init__()
         self._viewer: "ViewerModel" = viewer
         self._layer: Optional["Layer"] = None
-        self._widgets: List[AxisTransformWidgets] = []
+        self._rows: List[ReadOnlyAxisTransformRow] = []
 
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -202,13 +174,18 @@ class ReadOnlyAxesTransformWidget(QWidget):
 
     def set_selected_layer(self, layer: Optional["Layer"]) -> None:
         dims = self._viewer.dims
-        self._update_num_widgets(dims.ndim)
+        update_num_rows(
+            rows=self._rows,
+            layout=self.layout(),
+            desired_num=dims.ndim,
+            row_factory=ReadOnlyAxisTransformRow,
+        )
 
         self._set_axis_names(dims.axis_labels)
         layer_ndim = 0 if layer is None else layer.ndim
         ndim_diff = dims.ndim - layer_ndim
-        for i, widget in enumerate(self._axis_widgets()):
-            widget.setVisible(i >= ndim_diff)
+        for i, row in enumerate(self._rows):
+            set_row_visible(row, i >= ndim_diff)
 
         old_layer = self._layer
         if old_layer is not None:
@@ -224,46 +201,28 @@ class ReadOnlyAxesTransformWidget(QWidget):
             self._on_layer_scale_changed()
             self._on_layer_translate_changed()
 
-    def _update_num_widgets(self, desired_num: int) -> None:
-        current_num = len(self._widgets)
-        # Add any missing widgets.
-        for _ in range(desired_num - current_num):
-            widget = ReadOnlyAxisTransformWidgets()
-            widget.append_to_grid_layout(self.layout())
-            self._widgets.append(widget)
-        # Remove any unneeded widgets.
-        for _ in range(current_num - 1, desired_num - 1, -1):
-            widget = self._widgets.pop()
-            widget.remove_from_grid_layout(self.layout())
-
     def _on_viewer_dims_axis_labels_changed(self) -> None:
         self._set_axis_names(self._viewer.dims.axis_labels)
 
     def _set_axis_names(self, names: Tuple[str, ...]) -> None:
-        widgets = self._axis_widgets()
-        for name, widget in zip(names, widgets):
-            widget.name.setText(name)
+        for name, row in zip(names, self._rows):
+            row.name.setText(name)
 
     def _on_layer_scale_changed(self) -> None:
         assert self._layer is not None
         scale = self._layer.scale
-        widgets = self._layer_widgets()
-        for s, w in zip(scale, widgets):
-            w.spacing.setText(str(s))
+        for s, r in zip(scale, self._layer_rows()):
+            r.spacing.setText(str(s))
 
     def _on_layer_translate_changed(self) -> None:
         assert self._layer is not None
         translate = self._layer.translate
-        widgets = self._layer_widgets()
-        for t, w in zip(translate, widgets):
-            w.translate.setText(str(t))
+        for t, r in zip(translate, self._layer_rows()):
+            r.translate.setText(str(t))
 
-    def _axis_widgets(self) -> Tuple[AxisTransformWidgets, ...]:
-        return tuple(self._widgets)
-
-    def _layer_widgets(self) -> Tuple[AxisTransformWidgets, ...]:
+    def _layer_rows(self) -> Tuple[AxisTransformRow, ...]:
         return (
             ()
             if self._layer is None
-            else tuple(self._widgets[-self._layer.ndim :])  # noqa
+            else tuple(self._rows[-self._layer.ndim :])  # noqa
         )

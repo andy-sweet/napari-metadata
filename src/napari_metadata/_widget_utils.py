@@ -1,6 +1,6 @@
-from typing import Callable, Optional
+from typing import Callable, List, Optional, Protocol, Tuple
 
-from qtpy.QtWidgets import QLayout, QLayoutItem, QLineEdit, QWidget
+from qtpy.QtWidgets import QGridLayout, QLineEdit, QWidget
 
 
 def readonly_lineedit(text: Optional[str] = None) -> QLineEdit:
@@ -12,15 +12,33 @@ def readonly_lineedit(text: Optional[str] = None) -> QLineEdit:
     return widget
 
 
-def update_num_widgets(
-    *, layout: QLayout, desired_num: int, widget_factory: Callable[[], QWidget]
+class GridRow(Protocol):
+    def widgets() -> Tuple[QWidget, ...]:
+        ...
+
+
+def set_row_visible(row: GridRow, visible: bool) -> None:
+    for w in row.widgets():
+        w.setVisible(visible)
+
+
+def update_num_rows(
+    *,
+    rows: List[GridRow],
+    layout: QGridLayout,
+    desired_num: int,
+    row_factory: Callable[[], GridRow]
 ) -> None:
-    current_num: int = layout.count()
+    current_num = len(rows)
     # Add any missing widgets.
     for _ in range(desired_num - current_num):
-        widget = widget_factory()
-        layout.addWidget(widget)
+        row = row_factory()
+        index = layout.count()
+        for col, w in enumerate(row.widgets()):
+            layout.addWidget(w, index, col)
+        rows.append(row)
     # Remove any unneeded widgets.
-    for i in range(current_num - desired_num):
-        item: QLayoutItem = layout.takeAt(current_num - (i + 1))
-        item.widget().deleteLater()
+    for _ in range(current_num - 1, desired_num - 1, -1):
+        row = rows.pop()
+        for w in row.widgets():
+            layout.removeWidget(w)
