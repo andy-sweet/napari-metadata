@@ -63,14 +63,14 @@ class EditableMetadataWidget(QWidget):
         self._add_attribute_row("Transforms", self._spacing_widget)
 
         self._spatial_units = SpatialUnitsComboBox(viewer)
-        self._add_attribute_row("Spatial units", self._spatial_units)
+        self._add_attribute_row("Space units", self._spatial_units)
         self._spatial_units.currentTextChanged.connect(
             self._on_spatial_units_changed
         )
 
         self._temporal_units = QComboBox()
         self._temporal_units.addItems(TimeUnits.names())
-        self._add_attribute_row("Temporal units", self._temporal_units)
+        self._add_attribute_row("Time units", self._temporal_units)
         self._temporal_units.currentTextChanged.connect(
             self._on_temporal_units_changed
         )
@@ -228,10 +228,10 @@ class ReadOnlyMetadataWidget(QWidget):
         self._add_attribute_row("Dimensions", self._axes_widget)
 
         self._spacing_widget = ReadOnlyAxesSpacingWidget(viewer)
-        self._add_attribute_row("Spacing", self._spacing_widget)
+        self._add_attribute_row("Transforms", self._spacing_widget)
 
-        self.spatial_units = self._add_attribute_row("Spatial units")
-        self.temporal_units = self._add_attribute_row("Temporal units")
+        self.spatial_units = self._add_attribute_row("Space units")
+        self.temporal_units = self._add_attribute_row("Time units")
 
         # Push control widget to bottom.
         layout.addStretch(1)
