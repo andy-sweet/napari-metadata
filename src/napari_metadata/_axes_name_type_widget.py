@@ -1,12 +1,6 @@
-from typing import TYPE_CHECKING, Optional, Tuple, cast
+from typing import TYPE_CHECKING, List, Tuple
 
-from qtpy.QtWidgets import (
-    QComboBox,
-    QHBoxLayout,
-    QLineEdit,
-    QVBoxLayout,
-    QWidget,
-)
+from qtpy.QtWidgets import QComboBox, QGridLayout, QLabel, QLineEdit, QWidget
 
 from napari_metadata._axis_type import AxisType
 from napari_metadata._model import (
@@ -18,27 +12,33 @@ from napari_metadata._model import (
 )
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._time_units import TimeUnits
-from napari_metadata._widget_utils import readonly_lineedit, update_num_widgets
+from napari_metadata._widget_utils import readonly_lineedit
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
     from napari.layers import Layer
 
 
-class AxisNameTypeWidget(QWidget):
-    """Shows and controls one axis' name and type."""
+class AxisNameTypeWidget:
+    """Contains one axis' name and type."""
 
-    def __init__(self, parent: Optional["QWidget"]) -> None:
-        super().__init__(parent)
+    def __init__(self) -> None:
         self.name = QLineEdit()
         self.type = QComboBox()
         self.type.addItems(AxisType.names())
 
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.name)
-        layout.addWidget(self.type)
-        self.setLayout(layout)
+    def append_to_grid_layout(self, layout: QGridLayout) -> None:
+        row = layout.count()
+        layout.addWidget(self.name, row, 0)
+        layout.addWidget(self.type, row, 1)
+
+    def remove_from_grid_layout(self, layout: QGridLayout) -> None:
+        for w in (self.name, self.type):
+            layout.removeWidget(w)
+
+    def setVisible(self, visible: bool) -> None:
+        for w in (self.name, self.type):
+            w.setVisible(visible)
 
     def to_axis(
         self,
@@ -60,9 +60,14 @@ class AxesNameTypeWidget(QWidget):
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer
+        self._widgets: List[AxisNameTypeWidget] = []
 
-        layout = QVBoxLayout()
+        layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+
+        layout.addWidget(QLabel("Name"), 0, 0)
+        layout.addWidget(QLabel("Type"), 0, 1)
+
         self.setLayout(layout)
 
         self._viewer.dims.events.axis_labels.connect(
@@ -71,11 +76,7 @@ class AxesNameTypeWidget(QWidget):
 
     def set_selected_layer(self, layer: "Layer") -> None:
         dims = self._viewer.dims
-        update_num_widgets(
-            layout=self.layout(),
-            desired_num=dims.ndim,
-            widget_factory=self._make_axis_widget,
-        )
+        self._update_num_widgets(dims.ndim)
 
         names = self._get_layer_axis_names(layer)
         # TODO: given the current design we always need the event to be
@@ -94,6 +95,18 @@ class AxesNameTypeWidget(QWidget):
                 axis = extras.axes[i - ndim_diff]
                 widget.type.setCurrentText(str(axis.get_type()))
 
+    def _update_num_widgets(self, desired_num: int) -> None:
+        current_num = len(self._widgets)
+        # Add any missing widgets.
+        for _ in range(desired_num - current_num):
+            widget = self._make_axis_widget()
+            widget.append_to_grid_layout(self.layout())
+            self._widgets.append(widget)
+        # Remove any unneeded widgets.
+        for _ in range(current_num - 1, desired_num - 1, -1):
+            widget = self._widgets.pop()
+            widget.remove_from_grid_layout(self.layout())
+
     def _get_layer_axis_names(self, layer: "Layer") -> Tuple[str, ...]:
         viewer_names = list(self._viewer.dims.axis_labels)
         layer_names = extra_metadata(layer).get_axis_names()
@@ -101,7 +114,7 @@ class AxesNameTypeWidget(QWidget):
         return tuple(viewer_names)
 
     def _make_axis_widget(self) -> AxisNameTypeWidget:
-        widget = AxisNameTypeWidget(self)
+        widget = AxisNameTypeWidget()
         widget.name.textChanged.connect(self._on_axis_name_changed)
         widget.type.currentTextChanged.connect(self._on_axis_type_changed)
         return widget
@@ -120,11 +133,7 @@ class AxesNameTypeWidget(QWidget):
                 extras.set_axis_names(axis_names)
 
     def axis_widgets(self) -> Tuple[AxisNameTypeWidget, ...]:
-        layout = self.layout()
-        return [
-            cast(AxisNameTypeWidget, layout.itemAt(i).widget())
-            for i in range(0, layout.count())
-        ]
+        return tuple(self._widgets)
 
     def axis_names(self) -> Tuple[str, ...]:
         return tuple(widget.name.text() for widget in self.axis_widgets())
@@ -147,19 +156,25 @@ class AxesNameTypeWidget(QWidget):
                 )
 
 
-class ReadOnlyAxisNameTypeWidget(QWidget):
-    """Shows one axis' name and type."""
+class ReadOnlyAxisNameTypeWidgets:
+    """Contains one axis' name and type."""
 
-    def __init__(self, parent: Optional["QWidget"]) -> None:
-        super().__init__(parent)
+    def __init__(self) -> None:
         self.name = readonly_lineedit()
         self.type = readonly_lineedit()
 
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.name)
-        layout.addWidget(self.type)
-        self.setLayout(layout)
+    def append_to_grid_layout(self, layout: QGridLayout) -> None:
+        row = layout.count()
+        layout.addWidget(self.name, row, 0)
+        layout.addWidget(self.type, row, 1)
+
+    def remove_from_grid_layout(self, layout: QGridLayout) -> None:
+        for w in (self.name, self.type):
+            layout.removeWidget(w)
+
+    def setVisible(self, visible: bool) -> None:
+        for w in (self.name, self.type):
+            w.setVisible(visible)
 
 
 class ReadOnlyAxesNameTypeWidget(QWidget):
@@ -168,9 +183,12 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer
+        self._widgets: List[ReadOnlyAxisNameTypeWidgets] = []
 
-        layout = QVBoxLayout()
+        layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(QLabel("Name"), 0, 0)
+        layout.addWidget(QLabel("Type"), 0, 1)
         self.setLayout(layout)
 
         self._viewer.dims.events.axis_labels.connect(
@@ -179,12 +197,7 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
 
     def set_selected_layer(self, layer: "Layer") -> None:
         dims = self._viewer.dims
-        update_num_widgets(
-            layout=self.layout(),
-            desired_num=dims.ndim,
-            widget_factory=lambda: ReadOnlyAxisNameTypeWidget(self),
-        )
-
+        self._update_num_widgets(dims.ndim)
         ndim_diff = dims.ndim - layer.ndim
         extras = extra_metadata(layer)
         for i, widget in enumerate(self._axis_widgets()):
@@ -193,6 +206,18 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
                 axis = extras.axes[i - ndim_diff]
                 widget.name.setText(axis.name)
                 widget.type.setText(str(axis.get_type()))
+
+    def _update_num_widgets(self, desired_num: int) -> None:
+        current_num = len(self._widgets)
+        # Add any missing widgets.
+        for _ in range(desired_num - current_num):
+            widget = ReadOnlyAxisNameTypeWidgets()
+            widget.append_to_grid_layout(self.layout())
+            self._widgets.append(widget)
+        # Remove any unneeded widgets.
+        for _ in range(current_num - 1, desired_num - 1, -1):
+            widget = self._widgets.pop()
+            widget.remove_from_grid_layout(self.layout())
 
     def _on_viewer_dims_axis_labels_changed(self) -> None:
         self._set_axis_names(self._viewer.dims.axis_labels)
@@ -204,9 +229,5 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
         for name, widget in zip(names, widgets):
             widget.name.setText(name)
 
-    def _axis_widgets(self) -> Tuple[ReadOnlyAxisNameTypeWidget, ...]:
-        layout = self.layout()
-        return tuple(
-            cast(ReadOnlyAxisNameTypeWidget, layout.itemAt(i).widget())
-            for i in range(0, layout.count())
-        )
+    def _axis_widgets(self) -> Tuple[AxisNameTypeWidget, ...]:
+        return tuple(self._widgets)
