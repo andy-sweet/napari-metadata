@@ -18,9 +18,9 @@ from napari_metadata._axes_name_type_widget import (
     AxesNameTypeWidget,
     ReadOnlyAxesNameTypeWidget,
 )
-from napari_metadata._axes_spacing_widget import (
-    AxesSpacingWidget,
-    ReadOnlyAxesSpacingWidget,
+from napari_metadata._axes_transform_widget import (
+    AxesTransformWidget,
+    ReadOnlyAxesTransformWidget,
 )
 from napari_metadata._model import (
     coerce_extra_metadata,
@@ -59,7 +59,7 @@ class EditableMetadataWidget(QWidget):
         self._axes_widget = AxesNameTypeWidget(viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
-        self._spacing_widget = AxesSpacingWidget(viewer)
+        self._spacing_widget = AxesTransformWidget(viewer)
         self._add_attribute_row("Transforms", self._spacing_widget)
 
         self._spatial_units = SpatialUnitsComboBox(viewer)
@@ -147,7 +147,9 @@ class EditableMetadataWidget(QWidget):
     def _add_attribute_row(self, name: str, widget: QWidget) -> None:
         layout = self._attribute_widget.layout()
         row = layout.rowCount()
-        layout.addWidget(QLabel(name), row, 0)
+        label = QLabel(name)
+        label.setBuddy(widget)
+        layout.addWidget(label, row, 0)
         layout.addWidget(widget, row, 1)
 
     def _on_selected_layer_name_changed(self, event) -> None:
@@ -227,7 +229,7 @@ class ReadOnlyMetadataWidget(QWidget):
         self._axes_widget = ReadOnlyAxesNameTypeWidget(viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
-        self._spacing_widget = ReadOnlyAxesSpacingWidget(viewer)
+        self._spacing_widget = ReadOnlyAxesTransformWidget(viewer)
         self._add_attribute_row("Transforms", self._spacing_widget)
 
         self.spatial_units = self._add_attribute_row("Space units")
@@ -297,7 +299,9 @@ class ReadOnlyMetadataWidget(QWidget):
             widget = readonly_lineedit()
         layout = self._attribute_widget.layout()
         row = layout.rowCount()
-        layout.addWidget(QLabel(name), row, 0)
+        label = QLabel(name)
+        label.setBuddy(widget)
+        layout.addWidget(label, row, 0)
         layout.addWidget(widget, row, 1)
         return widget
 

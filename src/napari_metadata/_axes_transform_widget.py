@@ -4,6 +4,7 @@ from qtpy.QtWidgets import (
     QAbstractSpinBox,
     QDoubleSpinBox,
     QGridLayout,
+    QLabel,
     QWidget,
 )
 
@@ -48,7 +49,7 @@ class AxisTransformWidgets:
 
 
 # TODO: reduce redundancy between this class and the AxesNameTypeWidget.
-class AxesSpacingWidget(QWidget):
+class AxesTransformWidget(QWidget):
     """Shows and controls all axes' names and spacing."""
 
     def __init__(self, viewer: "ViewerModel") -> None:
@@ -60,9 +61,9 @@ class AxesSpacingWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         # Header
-        layout.addWidget(readonly_lineedit(), 0, 0)
-        layout.addWidget(readonly_lineedit("Scale"), 0, 1)
-        layout.addWidget(readonly_lineedit("Translate"), 0, 2)
+        layout.addWidget(QLabel("Name"), 0, 0)
+        layout.addWidget(QLabel("Scale"), 0, 1)
+        layout.addWidget(QLabel("Translate"), 0, 2)
 
         self.setLayout(layout)
 
@@ -176,7 +177,7 @@ class ReadOnlyAxisTransformWidgets:
             w.setVisible(visible)
 
 
-class ReadOnlyAxesSpacingWidget(QWidget):
+class ReadOnlyAxesTransformWidget(QWidget):
     """Shows and controls all axes' transform parameters."""
 
     def __init__(self, viewer: "ViewerModel") -> None:
@@ -189,9 +190,9 @@ class ReadOnlyAxesSpacingWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         # Header
-        layout.addWidget(readonly_lineedit(), 0, 0)
-        layout.addWidget(readonly_lineedit("Scale"), 0, 1)
-        layout.addWidget(readonly_lineedit("Translate"), 0, 2)
+        layout.addWidget(QLabel("Name"), 0, 0)
+        layout.addWidget(QLabel("Scale"), 0, 1)
+        layout.addWidget(QLabel("Translate"), 0, 2)
 
         self.setLayout(layout)
 
