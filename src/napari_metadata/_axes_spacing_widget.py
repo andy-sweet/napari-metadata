@@ -29,6 +29,7 @@ class AxisSpacingWidget(QWidget):
         self.spacing.setStepType(
             QAbstractSpinBox.StepType.AdaptiveDecimalStepType
         )
+        self.spacing.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
