@@ -1,14 +1,12 @@
 from typing import TYPE_CHECKING, Optional, Tuple, cast
 
-from qtpy.QtWidgets import (
-    QAbstractSpinBox,
-    QDoubleSpinBox,
-    QHBoxLayout,
-    QVBoxLayout,
-    QWidget,
-)
+from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
-from napari_metadata._widget_utils import readonly_lineedit, update_num_widgets
+from napari_metadata._widget_utils import (
+    PositiveDoubleLineEdit,
+    readonly_lineedit,
+    update_num_widgets,
+)
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -18,17 +16,12 @@ if TYPE_CHECKING:
 class AxisSpacingWidget(QWidget):
     """Shows and controls one axis' name and spacing."""
 
-    def __init__(self, parent: Optional["QWidget"]) -> None:
+    def __init__(self, parent: Optional[QWidget]) -> None:
         super().__init__(parent)
         self.name = readonly_lineedit()
 
-        self.spacing = QDoubleSpinBox()
-        self.spacing.setDecimals(6)
-        self.spacing.setRange(1e-6, 1e6)
+        self.spacing = PositiveDoubleLineEdit(self)
         self.spacing.setValue(1)
-        self.spacing.setStepType(
-            QAbstractSpinBox.StepType.AdaptiveDecimalStepType
-        )
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -113,7 +106,7 @@ class AxesSpacingWidget(QWidget):
 
     def _make_axis_spacing_widget(self) -> AxisSpacingWidget:
         widget = AxisSpacingWidget(self)
-        widget.spacing.valueChanged.connect(self._on_pixel_size_changed)
+        widget.spacing.editingFinished.connect(self._on_pixel_size_changed)
         return widget
 
 
