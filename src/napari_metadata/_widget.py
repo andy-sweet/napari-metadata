@@ -60,7 +60,7 @@ class EditableMetadataWidget(QWidget):
         self._add_attribute_row("Dimensions", self._axes_widget)
 
         self._spacing_widget = AxesSpacingWidget(viewer)
-        self._add_attribute_row("Spacing", self._spacing_widget)
+        self._add_attribute_row("Transforms", self._spacing_widget)
 
         self._spatial_units = SpatialUnitsComboBox(viewer)
         self._add_attribute_row("Spatial units", self._spatial_units)

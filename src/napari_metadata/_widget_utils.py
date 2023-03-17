@@ -1,10 +1,12 @@
-from typing import Callable
+from typing import Callable, Optional
 
 from qtpy.QtWidgets import QLayout, QLayoutItem, QLineEdit, QWidget
 
 
-def readonly_lineedit() -> QLineEdit:
+def readonly_lineedit(text: Optional[str] = None) -> QLineEdit:
     widget = QLineEdit()
+    if text is not None:
+        widget.setText(text)
     widget.setReadOnly(True)
     widget.setStyleSheet("QLineEdit{" "background: transparent;" "}")
     return widget
