@@ -114,23 +114,24 @@ def extra_metadata(layer: "Layer") -> Optional[ExtraMetadata]:
     return layer.metadata.get(EXTRA_METADATA_KEY)
 
 
-def coerce_extra_metadata(viewer: "ViewerModel", layer: "Layer") -> None:
-    if EXTRA_METADATA_KEY in layer.metadata:
-        assert isinstance(layer.metadata[EXTRA_METADATA_KEY], ExtraMetadata)
-        return
-    axes = [
-        SpaceAxis(name=name)
-        for name in viewer.dims.axis_labels[-layer.ndim :]  # noqa
-    ]
-    original = OriginalMetadata(
-        axes=tuple(deepcopy(axes)),
-        name=layer.name,
-        scale=tuple(layer.scale),
-    )
-    layer.metadata[EXTRA_METADATA_KEY] = ExtraMetadata(
-        axes=axes,
-        original=original,
-    )
+def coerce_extra_metadata(
+    viewer: "ViewerModel", layer: "Layer"
+) -> ExtraMetadata:
+    if EXTRA_METADATA_KEY not in layer.metadata:
+        axes = [
+            SpaceAxis(name=name)
+            for name in viewer.dims.axis_labels[-layer.ndim :]  # noqa
+        ]
+        original = OriginalMetadata(
+            axes=tuple(deepcopy(axes)),
+            name=layer.name,
+            scale=tuple(layer.scale),
+        )
+        layer.metadata[EXTRA_METADATA_KEY] = ExtraMetadata(
+            axes=axes,
+            original=original,
+        )
+    return layer.metadata[EXTRA_METADATA_KEY]
 
 
 def is_metadata_equal_to_original(layer: Optional["Layer"]) -> bool:

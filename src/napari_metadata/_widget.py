@@ -24,7 +24,6 @@ from napari_metadata._axes_transform_widget import (
 )
 from napari_metadata._model import (
     coerce_extra_metadata,
-    extra_metadata,
     is_metadata_equal_to_original,
 )
 from napari_metadata._space_units import SpaceUnits
@@ -136,7 +135,8 @@ class EditableMetadataWidget(QWidget):
             self.name.setText(layer.name)
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.scale.connect(self._update_restore_enabled)
-            time_unit = str(extra_metadata(layer).get_time_unit())
+            extras = coerce_extra_metadata(self._viewer, layer)
+            time_unit = str(extras.get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
 
         self._spacing_widget.set_selected_layer(layer)
@@ -165,8 +165,8 @@ class EditableMetadataWidget(QWidget):
         if unit is None:
             unit = SpaceUnits.NONE
         for layer in self._viewer.layers:
-            if extras := extra_metadata(layer):
-                extras.set_space_unit(unit)
+            extras = coerce_extra_metadata(self._viewer, layer)
+            extras.set_space_unit(unit)
         self._update_restore_enabled()
 
     def _on_temporal_units_changed(self) -> None:
@@ -174,14 +174,14 @@ class EditableMetadataWidget(QWidget):
         if unit is None:
             unit = TimeUnits.NONE
         for layer in self._viewer.layers:
-            if extras := extra_metadata(layer):
-                extras.set_time_unit(unit)
+            extras = coerce_extra_metadata(self._viewer, layer)
+            extras.set_time_unit(unit)
         self._update_restore_enabled()
 
     def _on_restore_clicked(self) -> None:
         assert self._selected_layer is not None
         layer = self._selected_layer
-        extras = extra_metadata(layer)
+        extras = coerce_extra_metadata(self._viewer, layer)
         if original := extras.original:
             extras.axes = list(deepcopy(original.axes))
             if name := original.name:
@@ -190,7 +190,7 @@ class EditableMetadataWidget(QWidget):
                 layer.scale = scale
             self._spatial_units.set_selected_layer(layer)
             self._axes_widget.set_selected_layer(layer)
-            time_unit = str(extra_metadata(layer).get_time_unit())
+            time_unit = str(extras.get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
 
     def _update_restore_enabled(self) -> None:
@@ -273,7 +273,7 @@ class ReadOnlyMetadataWidget(QWidget):
             self.plugin.setText(_layer_plugin_info(layer))
             self.data_shape.setText(_layer_data_shape(layer))
             self.data_type.setText(_layer_data_dtype(layer))
-            extras = extra_metadata(layer)
+            extras = coerce_extra_metadata(self._viewer, layer)
             self.spatial_units.setText(str(extras.get_space_unit()))
             self.temporal_units.setText(str(extras.get_time_unit()))
 

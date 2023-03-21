@@ -8,7 +8,7 @@ from napari_metadata._model import (
     ChannelAxis,
     SpaceAxis,
     TimeAxis,
-    extra_metadata,
+    coerce_extra_metadata,
 )
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._time_units import TimeUnits
@@ -85,7 +85,7 @@ class AxesNameTypeWidget(QWidget):
             dims.axis_labels = names
         ndim_diff = dims.ndim - layer.ndim
 
-        extras = extra_metadata(layer)
+        extras = coerce_extra_metadata(self._viewer, layer)
         for i, row in enumerate(self._rows):
             set_row_visible(row, i >= ndim_diff)
             if i >= ndim_diff:
@@ -94,7 +94,8 @@ class AxesNameTypeWidget(QWidget):
 
     def _get_layer_axis_names(self, layer: "Layer") -> Tuple[str, ...]:
         viewer_names = list(self._viewer.dims.axis_labels)
-        layer_names = extra_metadata(layer).get_axis_names()
+        extras = coerce_extra_metadata(self._viewer, layer)
+        layer_names = extras.get_axis_names()
         viewer_names[-layer.ndim :] = layer_names  # noqa
         return tuple(viewer_names)
 
@@ -110,11 +111,9 @@ class AxesNameTypeWidget(QWidget):
         for name, row in zip(names, self._rows):
             row.name.setText(name)
         for layer in self._viewer.layers:
-            if extras := extra_metadata(layer):
-                axis_names = self._viewer.dims.axis_labels[
-                    -layer.ndim :  # noqa
-                ]
-                extras.set_axis_names(axis_names)
+            extras = coerce_extra_metadata(self._viewer, layer)
+            axis_names = self._viewer.dims.axis_labels[-layer.ndim :]  # noqa
+            extras.set_axis_names(axis_names)
 
     def axis_widgets(self) -> Tuple[AxisNameTypeRow, ...]:
         return tuple(self._rows)
@@ -129,7 +128,7 @@ class AxesNameTypeWidget(QWidget):
         axis_widgets = self.axis_widgets()
         ndim = len(axis_widgets)
         for layer in self._viewer.layers:
-            extras = extra_metadata(layer)
+            extras = coerce_extra_metadata(self._viewer, layer)
             space_unit = extras.get_space_unit()
             time_unit = extras.get_time_unit()
             for i in range(layer.ndim):
@@ -176,7 +175,7 @@ class ReadOnlyAxesNameTypeWidget(QWidget):
             row_factory=ReadOnlyAxisNameTypeRow,
         )
         ndim_diff = dims.ndim - layer.ndim
-        extras = extra_metadata(layer)
+        extras = coerce_extra_metadata(self._viewer, layer)
         for i, row in enumerate(self._rows):
             set_row_visible(row, i >= ndim_diff)
             if i >= ndim_diff:
