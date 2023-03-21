@@ -359,8 +359,8 @@ def test_set_translate(qtbot: "QtBot"):
 def test_restore_defaults(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
-    metadata = extra_metadata(layer)
-    metadata.original = OriginalMetadata(
+    extras = extra_metadata(layer)
+    extras.original = OriginalMetadata(
         axes=(
             TimeAxis(name="t", unit=TimeUnits.NANOSECOND),
             SpaceAxis(name="u", unit=SpaceUnits.CENTIMETER),
@@ -368,9 +368,9 @@ def test_restore_defaults(qtbot: "QtBot"):
         name="kermit",
         scale=(2, 3),
     )
-    assert layer.name != metadata.original.name
-    assert tuple(layer.scale) != metadata.original.scale
-    assert tuple(metadata.axes) != metadata.original.axes
+    assert layer.name != extras.original.name
+    assert tuple(layer.scale) != extras.original.scale
+    assert tuple(extras.axes) != extras.original.axes
     assert widget._editable_widget._spatial_units.currentText() != "centimeter"
     assert (
         widget._editable_widget._temporal_units.currentText() != "nanosecond"
@@ -379,9 +379,9 @@ def test_restore_defaults(qtbot: "QtBot"):
     widget._editable_widget._restore_defaults.setEnabled(True)
     widget._editable_widget._restore_defaults.click()
 
-    assert layer.name == metadata.original.name
-    assert tuple(layer.scale) == metadata.original.scale
-    assert tuple(metadata.axes) == metadata.original.axes
+    assert layer.name == extras.original.name
+    assert tuple(layer.scale) == extras.original.scale
+    assert tuple(extras.axes) == extras.original.axes
     assert widget._editable_widget._spatial_units.currentText() == "centimeter"
     assert (
         widget._editable_widget._temporal_units.currentText() == "nanosecond"
