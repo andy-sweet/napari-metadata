@@ -1,8 +1,8 @@
-from typing import Callable, Optional
+from typing import Callable, List, Optional, Protocol, Tuple
 
-from qtpy.QtCore import QObject
+from qtpy.QtCore import QObject, Signal
 from qtpy.QtGui import QDoubleValidator, QValidator
-from qtpy.QtWidgets import QLayout, QLayoutItem, QLineEdit, QWidget
+from qtpy.QtWidgets import QGridLayout, QLineEdit, QWidget
 
 
 class PositiveDoubleValidator(QDoubleValidator):
@@ -24,9 +24,12 @@ class PositiveDoubleValidator(QDoubleValidator):
 
 
 class PositiveDoubleLineEdit(QLineEdit):
-    def __init__(self, parent: Optional[QWidget]) -> None:
+    valueChanged = Signal()
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setValidator(PositiveDoubleValidator())
+        self.editingFinished.connect(self.valueChanged)
 
     def setValue(self, value: float) -> None:
         text = str(value)
@@ -41,22 +44,63 @@ class PositiveDoubleLineEdit(QLineEdit):
         return float(self.text())
 
 
-def readonly_lineedit() -> QLineEdit:
+class DoubleLineEdit(QLineEdit):
+    valueChanged = Signal()
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setValidator(QDoubleValidator())
+        self.editingFinished.connect(self.valueChanged)
+
+    def setValue(self, value: float) -> None:
+        text = str(value)
+        state, text, _ = self.validator().validate(text, 0)
+        if state != QValidator.State.Acceptable:
+            raise ValueError("Value must be a positive real number.")
+        if text != self.text():
+            self.setText(str(value))
+            self.editingFinished.emit()
+
+    def value(self) -> float:
+        return float(self.text())
+
+
+def readonly_lineedit(text: Optional[str] = None) -> QLineEdit:
     widget = QLineEdit()
+    if text is not None:
+        widget.setText(text)
     widget.setReadOnly(True)
     widget.setStyleSheet("QLineEdit{" "background: transparent;" "}")
     return widget
 
 
-def update_num_widgets(
-    *, layout: QLayout, desired_num: int, widget_factory: Callable[[], QWidget]
+class GridRow(Protocol):
+    def widgets() -> Tuple[QWidget, ...]:
+        ...
+
+
+def set_row_visible(row: GridRow, visible: bool) -> None:
+    for w in row.widgets():
+        w.setVisible(visible)
+
+
+def update_num_rows(
+    *,
+    rows: List[GridRow],
+    layout: QGridLayout,
+    desired_num: int,
+    row_factory: Callable[[], GridRow]
 ) -> None:
-    current_num: int = layout.count()
+    current_num = len(rows)
     # Add any missing widgets.
     for _ in range(desired_num - current_num):
-        widget = widget_factory()
-        layout.addWidget(widget)
+        row = row_factory()
+        index = layout.count()
+        for col, w in enumerate(row.widgets()):
+            layout.addWidget(w, index, col)
+        rows.append(row)
     # Remove any unneeded widgets.
-    for i in range(current_num - desired_num):
-        item: QLayoutItem = layout.takeAt(current_num - (i + 1))
-        item.widget().deleteLater()
+    for _ in range(current_num - 1, desired_num - 1, -1):
+        row = rows.pop()
+        for w in row.widgets():
+            layout.removeWidget(w)

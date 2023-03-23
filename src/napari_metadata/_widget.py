@@ -18,13 +18,12 @@ from napari_metadata._axes_name_type_widget import (
     AxesNameTypeWidget,
     ReadOnlyAxesNameTypeWidget,
 )
-from napari_metadata._axes_spacing_widget import (
-    AxesSpacingWidget,
-    ReadOnlyAxesSpacingWidget,
+from napari_metadata._axes_transform_widget import (
+    AxesTransformWidget,
+    ReadOnlyAxesTransformWidget,
 )
 from napari_metadata._model import (
     coerce_extra_metadata,
-    extra_metadata,
     is_metadata_equal_to_original,
 )
 from napari_metadata._space_units import SpaceUnits
@@ -59,18 +58,18 @@ class EditableMetadataWidget(QWidget):
         self._axes_widget = AxesNameTypeWidget(viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
-        self._spacing_widget = AxesSpacingWidget(viewer)
-        self._add_attribute_row("Spacing", self._spacing_widget)
+        self._spacing_widget = AxesTransformWidget(viewer)
+        self._add_attribute_row("Transforms", self._spacing_widget)
 
         self._spatial_units = SpatialUnitsComboBox(viewer)
-        self._add_attribute_row("Spatial units", self._spatial_units)
+        self._add_attribute_row("Space units", self._spatial_units)
         self._spatial_units.currentTextChanged.connect(
             self._on_spatial_units_changed
         )
 
         self._temporal_units = QComboBox()
         self._temporal_units.addItems(TimeUnits.names())
-        self._add_attribute_row("Temporal units", self._temporal_units)
+        self._add_attribute_row("Time units", self._temporal_units)
         self._temporal_units.currentTextChanged.connect(
             self._on_temporal_units_changed
         )
@@ -136,7 +135,8 @@ class EditableMetadataWidget(QWidget):
             self.name.setText(layer.name)
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.scale.connect(self._update_restore_enabled)
-            time_unit = str(extra_metadata(layer).get_time_unit())
+            extras = coerce_extra_metadata(self._viewer, layer)
+            time_unit = str(extras.get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
 
         self._spacing_widget.set_selected_layer(layer)
@@ -147,7 +147,9 @@ class EditableMetadataWidget(QWidget):
     def _add_attribute_row(self, name: str, widget: QWidget) -> None:
         layout = self._attribute_widget.layout()
         row = layout.rowCount()
-        layout.addWidget(QLabel(name), row, 0)
+        label = QLabel(name)
+        label.setBuddy(widget)
+        layout.addWidget(label, row, 0)
         layout.addWidget(widget, row, 1)
 
     def _on_selected_layer_name_changed(self, event) -> None:
@@ -163,8 +165,8 @@ class EditableMetadataWidget(QWidget):
         if unit is None:
             unit = SpaceUnits.NONE
         for layer in self._viewer.layers:
-            if extras := extra_metadata(layer):
-                extras.set_space_unit(unit)
+            extras = coerce_extra_metadata(self._viewer, layer)
+            extras.set_space_unit(unit)
         self._update_restore_enabled()
 
     def _on_temporal_units_changed(self) -> None:
@@ -172,14 +174,14 @@ class EditableMetadataWidget(QWidget):
         if unit is None:
             unit = TimeUnits.NONE
         for layer in self._viewer.layers:
-            if extras := extra_metadata(layer):
-                extras.set_time_unit(unit)
+            extras = coerce_extra_metadata(self._viewer, layer)
+            extras.set_time_unit(unit)
         self._update_restore_enabled()
 
     def _on_restore_clicked(self) -> None:
         assert self._selected_layer is not None
         layer = self._selected_layer
-        extras = extra_metadata(layer)
+        extras = coerce_extra_metadata(self._viewer, layer)
         if original := extras.original:
             extras.axes = list(deepcopy(original.axes))
             if name := original.name:
@@ -188,7 +190,7 @@ class EditableMetadataWidget(QWidget):
                 layer.scale = scale
             self._spatial_units.set_selected_layer(layer)
             self._axes_widget.set_selected_layer(layer)
-            time_unit = str(extra_metadata(layer).get_time_unit())
+            time_unit = str(extras.get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
 
     def _update_restore_enabled(self) -> None:
@@ -227,11 +229,11 @@ class ReadOnlyMetadataWidget(QWidget):
         self._axes_widget = ReadOnlyAxesNameTypeWidget(viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
-        self._spacing_widget = ReadOnlyAxesSpacingWidget(viewer)
-        self._add_attribute_row("Spacing", self._spacing_widget)
+        self._spacing_widget = ReadOnlyAxesTransformWidget(viewer)
+        self._add_attribute_row("Transforms", self._spacing_widget)
 
-        self.spatial_units = self._add_attribute_row("Spatial units")
-        self.temporal_units = self._add_attribute_row("Temporal units")
+        self.spatial_units = self._add_attribute_row("Space units")
+        self.temporal_units = self._add_attribute_row("Time units")
 
         # Push control widget to bottom.
         layout.addStretch(1)
@@ -271,7 +273,7 @@ class ReadOnlyMetadataWidget(QWidget):
             self.plugin.setText(_layer_plugin_info(layer))
             self.data_shape.setText(_layer_data_shape(layer))
             self.data_type.setText(_layer_data_dtype(layer))
-            extras = extra_metadata(layer)
+            extras = coerce_extra_metadata(self._viewer, layer)
             self.spatial_units.setText(str(extras.get_space_unit()))
             self.temporal_units.setText(str(extras.get_time_unit()))
 
@@ -297,7 +299,9 @@ class ReadOnlyMetadataWidget(QWidget):
             widget = readonly_lineedit()
         layout = self._attribute_widget.layout()
         row = layout.rowCount()
-        layout.addWidget(QLabel(name), row, 0)
+        label = QLabel(name)
+        label.setBuddy(widget)
+        layout.addWidget(label, row, 0)
         layout.addWidget(widget, row, 1)
         return widget
 
