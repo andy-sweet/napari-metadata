@@ -14,14 +14,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari_metadata._axes_name_type_widget import (
-    AxesNameTypeWidget,
-    ReadOnlyAxesNameTypeWidget,
-)
-from napari_metadata._axes_transform_widget import (
-    AxesTransformWidget,
-    ReadOnlyAxesTransformWidget,
-)
+from napari_metadata._axes_widget import AxesWidget, ReadOnlyAxesWidget
 from napari_metadata._model import (
     coerce_extra_metadata,
     is_metadata_equal_to_original,
@@ -55,11 +48,8 @@ class EditableMetadataWidget(QWidget):
         self._add_attribute_row("Layer name", self.name)
         self.name.textChanged.connect(self._on_name_changed)
 
-        self._axes_widget = AxesNameTypeWidget(viewer)
-        self._add_attribute_row("Dimensions", self._axes_widget)
-
-        self._spacing_widget = AxesTransformWidget(viewer)
-        self._add_attribute_row("Transforms", self._spacing_widget)
+        self._axes_widget = AxesWidget(viewer)
+        self._add_attribute_row("Axes", self._axes_widget)
 
         self._spatial_units = SpatialUnitsComboBox(viewer)
         self._add_attribute_row("Space units", self._spatial_units)
@@ -138,8 +128,6 @@ class EditableMetadataWidget(QWidget):
             extras = coerce_extra_metadata(self._viewer, layer)
             time_unit = str(extras.get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
-
-        self._spacing_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
         self._update_restore_enabled()
@@ -226,11 +214,8 @@ class ReadOnlyMetadataWidget(QWidget):
         self.data_shape = self._add_attribute_row("Array shape")
         self.data_type = self._add_attribute_row("Data type")
 
-        self._axes_widget = ReadOnlyAxesNameTypeWidget(viewer)
-        self._add_attribute_row("Dimensions", self._axes_widget)
-
-        self._spacing_widget = ReadOnlyAxesTransformWidget(viewer)
-        self._add_attribute_row("Transforms", self._spacing_widget)
+        self._axes_widget = ReadOnlyAxesWidget(viewer)
+        self._add_attribute_row("Axes", self._axes_widget)
 
         self.spatial_units = self._add_attribute_row("Space units")
         self.temporal_units = self._add_attribute_row("Time units")
@@ -281,8 +266,6 @@ class ReadOnlyMetadataWidget(QWidget):
             layer.events.data.connect(self._on_selected_layer_data_changed)
 
             self._axes_widget.set_selected_layer(layer)
-
-        self._spacing_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
 

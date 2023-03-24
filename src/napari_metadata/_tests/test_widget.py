@@ -14,7 +14,7 @@ from napari.layers import (
 )
 
 from napari_metadata import MetadataWidget
-from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
+from napari_metadata._axes_widget import AxesWidget
 from napari_metadata._axis_type import AxisType
 from napari_metadata._model import (
     EXTRA_METADATA_KEY,
@@ -303,9 +303,7 @@ def test_set_time_unit(qtbot: "QtBot"):
 def test_set_layer_scale(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
-    pixel_width_widget = (
-        widget._editable_widget._spacing_widget._axis_widgets()[0].spacing
-    )
+    pixel_width_widget = axes_widget(widget).axis_widgets()[0].scale
     assert layer.scale[0] == pixel_width_widget.value()
     assert pixel_width_widget.value() != 4.5
 
@@ -317,9 +315,7 @@ def test_set_layer_scale(qtbot: "QtBot"):
 def test_set_layer_translate(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
-    translate_widget = widget._editable_widget._spacing_widget._axis_widgets()[
-        0
-    ].translate
+    translate_widget = axes_widget(widget).axis_widgets()[0].translate
     assert layer.translate[0] == translate_widget.value()
     assert translate_widget.value() != -2
 
@@ -331,9 +327,7 @@ def test_set_layer_translate(qtbot: "QtBot"):
 def test_set_pixel_size(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
-    pixel_width_widget = (
-        widget._editable_widget._spacing_widget._axis_widgets()[0].spacing
-    )
+    pixel_width_widget = axes_widget(widget).axis_widgets()[0].scale
     assert pixel_width_widget.value() == layer.scale[0]
     assert layer.scale[0] != 4.5
 
@@ -345,9 +339,7 @@ def test_set_pixel_size(qtbot: "QtBot"):
 def test_set_translate(qtbot: "QtBot"):
     viewer, widget = make_viewer_with_one_image_and_widget(qtbot)
     layer = viewer.layers[0]
-    translate_widget = widget._editable_widget._spacing_widget._axis_widgets()[
-        0
-    ].translate
+    translate_widget = axes_widget(widget).axis_widgets()[0].translate
     assert translate_widget.value() == layer.translate[0]
     assert layer.translate[0] != -2
 
@@ -430,7 +422,7 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
     assert widget._editable_widget._temporal_units.currentText() == "second"
 
 
-def axes_widget(widget: MetadataWidget) -> AxesNameTypeWidget:
+def axes_widget(widget: MetadataWidget) -> AxesWidget:
     return widget._editable_widget._axes_widget
 
 
