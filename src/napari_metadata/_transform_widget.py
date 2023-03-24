@@ -1,15 +1,9 @@
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from qtpy.QtWidgets import (
-    QAbstractSpinBox,
-    QDoubleSpinBox,
-    QGridLayout,
-    QLabel,
-    QLineEdit,
-    QWidget,
-)
+from qtpy.QtWidgets import QGridLayout, QLabel, QLineEdit, QWidget
 
 from napari_metadata._widget_utils import (
+    DoubleLineEdit,
     readonly_lineedit,
     set_row_visible,
     update_num_rows,
@@ -20,35 +14,27 @@ if TYPE_CHECKING:
     from napari.layers import Layer
 
 
-def make_double_spinbox(value: float, *, lower: float) -> QDoubleSpinBox:
-    spinbox = QDoubleSpinBox()
-    spinbox.setDecimals(6)
-    spinbox.setMinimum(lower)
-    spinbox.setValue(value)
-    spinbox.setSingleStep(0.1)
-    spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-    return spinbox
-
-
-class AxisTransformRow:
+class TransformRow:
     def __init__(self) -> None:
         self.name = readonly_lineedit()
-        self.spacing = make_double_spinbox(1, lower=1e-6)
-        self.translate = make_double_spinbox(0, lower=-1e6)
+        self.spacing = DoubleLineEdit()
+        self.spacing.setValue(1)
+        self.translate = DoubleLineEdit()
+        self.translate.setValue(0)
 
     def widgets(self) -> Tuple[QWidget, ...]:
         return (self.name, self.spacing, self.translate)
 
 
 # TODO: reduce redundancy between this class and the AxesNameTypeWidget.
-class AxesTransformWidget(QWidget):
+class TransformWidget(QWidget):
     """Shows and controls all axes' names and spacing."""
 
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer
         self._layer: Optional["Layer"] = None
-        self._rows: List[AxisTransformRow] = []
+        self._rows: List[TransformRow] = []
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -122,24 +108,24 @@ class AxesTransformWidget(QWidget):
         translate = tuple(w.translate.value() for w in self._layer_widgets())
         self._layer.translate = translate
 
-    def _axis_widgets(self) -> Tuple[AxisTransformRow, ...]:
+    def _axis_widgets(self) -> Tuple[TransformRow, ...]:
         return tuple(self._rows)
 
-    def _layer_widgets(self) -> Tuple[AxisTransformRow, ...]:
+    def _layer_widgets(self) -> Tuple[TransformRow, ...]:
         return (
             ()
             if self._layer is None
             else tuple(self._rows[-self._layer.ndim :])  # noqa
         )
 
-    def _make_row(self) -> AxisTransformRow:
-        widget = AxisTransformRow()
+    def _make_row(self) -> TransformRow:
+        widget = TransformRow()
         widget.spacing.valueChanged.connect(self._on_pixel_size_changed)
         widget.translate.valueChanged.connect(self._on_translate_changed)
         return widget
 
 
-class ReadOnlyAxisTransformRow:
+class ReadOnlyTransformRow:
     def __init__(self):
         self.name: QLineEdit = readonly_lineedit()
         self.spacing: QLineEdit = readonly_lineedit()
@@ -149,14 +135,14 @@ class ReadOnlyAxisTransformRow:
         return (self.name, self.spacing, self.translate)
 
 
-class ReadOnlyAxesTransformWidget(QWidget):
+class ReadOnlyTransformWidget(QWidget):
     """Shows and controls all axes' transform parameters."""
 
     def __init__(self, viewer: "ViewerModel") -> None:
         super().__init__()
         self._viewer: "ViewerModel" = viewer
         self._layer: Optional["Layer"] = None
-        self._rows: List[ReadOnlyAxisTransformRow] = []
+        self._rows: List[ReadOnlyTransformRow] = []
 
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -178,7 +164,7 @@ class ReadOnlyAxesTransformWidget(QWidget):
             rows=self._rows,
             layout=self.layout(),
             desired_num=dims.ndim,
-            row_factory=ReadOnlyAxisTransformRow,
+            row_factory=ReadOnlyTransformRow,
         )
 
         self._set_axis_names(dims.axis_labels)
@@ -220,7 +206,7 @@ class ReadOnlyAxesTransformWidget(QWidget):
         for t, r in zip(translate, self._layer_rows()):
             r.translate.setText(str(t))
 
-    def _layer_rows(self) -> Tuple[AxisTransformRow, ...]:
+    def _layer_rows(self) -> Tuple[TransformRow, ...]:
         return (
             ()
             if self._layer is None
