@@ -1,3 +1,4 @@
+import sys
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from qtpy.QtWidgets import (
@@ -20,10 +21,15 @@ if TYPE_CHECKING:
     from napari.layers import Layer
 
 
-def make_double_spinbox(value: float, *, lower: float) -> QDoubleSpinBox:
+def make_double_spinbox(
+    value: float, *, lower: Optional[float] = None
+) -> QDoubleSpinBox:
+    if lower is None:
+        lower = -sys.float_info.max
     spinbox = QDoubleSpinBox()
     spinbox.setDecimals(6)
     spinbox.setMinimum(lower)
+    spinbox.setMaximum(sys.float_info.max)
     spinbox.setValue(value)
     spinbox.setSingleStep(0.1)
     spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
@@ -34,7 +40,7 @@ class AxisTransformRow:
     def __init__(self) -> None:
         self.name = readonly_lineedit()
         self.spacing = make_double_spinbox(1, lower=1e-6)
-        self.translate = make_double_spinbox(0, lower=-1e6)
+        self.translate = make_double_spinbox(0)
 
     def widgets(self) -> Tuple[QWidget, ...]:
         return (self.name, self.spacing, self.translate)
@@ -134,8 +140,8 @@ class AxesTransformWidget(QWidget):
 
     def _make_row(self) -> AxisTransformRow:
         widget = AxisTransformRow()
-        widget.spacing.valueChanged.connect(self._on_pixel_size_changed)
-        widget.translate.valueChanged.connect(self._on_translate_changed)
+        widget.spacing.editingFinished.connect(self._on_pixel_size_changed)
+        widget.translate.editingFinished.connect(self._on_translate_changed)
         return widget
 
 
