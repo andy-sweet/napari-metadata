@@ -158,7 +158,6 @@ class EditableMetadataWidget(QWidget):
 
     def _on_selected_layer_name_changed(self, event) -> None:
         self.name.setText(event.source.name)
-        self._update_restore_enabled()
 
     def _on_name_changed(self) -> None:
         if self._selected_layer is not None:
