@@ -72,6 +72,7 @@ class OriginalMetadata:
     axes: Tuple[Axis]
     name: Optional[str]
     scale: Optional[Tuple[float, ...]]
+    translate: Optional[Tuple[float, ...]]
 
 
 @dataclass
@@ -126,6 +127,7 @@ def coerce_extra_metadata(
             axes=tuple(deepcopy(axes)),
             name=layer.name,
             scale=tuple(layer.scale),
+            translate=tuple(layer.translate),
         )
         layer.metadata[EXTRA_METADATA_KEY] = ExtraMetadata(
             axes=axes,
@@ -145,6 +147,8 @@ def is_metadata_equal_to_original(layer: Optional["Layer"]) -> bool:
     if tuple(extras.axes) != extras.original.axes:
         return False
     if tuple(layer.scale) != extras.original.scale:
+        return False
+    if tuple(layer.translate) != extras.original.translate:
         return False
     if layer.name != extras.original.name:
         return False
