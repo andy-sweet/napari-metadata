@@ -5,22 +5,40 @@ from qtpy.QtGui import QDoubleValidator, QValidator
 from qtpy.QtWidgets import QGridLayout, QLineEdit, QWidget
 
 
-class PositiveDoubleValidator(QDoubleValidator):
-    MIN_VALUE: float = 1e-6
-
+class DoubleValidator(QDoubleValidator):
     def __init__(self, parent: Optional[QObject] = None) -> None:
         super().__init__(parent)
-        self.setBottom(self.MIN_VALUE)
+        self.last_valid: str = "0"
 
     def fixup(self, text: str) -> str:
-        try:
-            value = float(text)
-            if value < self.MIN_VALUE:
-                return str(self.MIN_VALUE)
-        except ValueError:
-            # Ignore cast errors and just return the input.
-            pass
-        return text
+        return self.last_valid
+
+    def validate(
+        self, text: str, pos: int
+    ) -> Tuple[QValidator.State, str, int]:
+        state, text, pos = super().validate(text, pos)
+        if state == QValidator.State.Acceptable:
+            self.last_valid = text
+        return state, text, pos
+
+
+class PositiveDoubleValidator(QDoubleValidator):
+    def __init__(self, parent: Optional[QObject] = None) -> None:
+        super().__init__(parent)
+        self.last_valid: str = "1"
+
+    def fixup(self, text: str) -> str:
+        return self.last_valid
+
+    def validate(
+        self, text: str, pos: int
+    ) -> Tuple[QValidator.State, str, int]:
+        state, text, pos = super().validate(text, pos)
+        if state == QValidator.State.Acceptable and float(text) <= 0:
+            state = QValidator.State.Intermediate
+        if state == QValidator.State.Acceptable:
+            self.last_valid = text
+        return state, text, pos
 
 
 class DoubleLineEdit(QLineEdit):
@@ -28,16 +46,19 @@ class DoubleLineEdit(QLineEdit):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        self.setValidator(QDoubleValidator())
+        self.setValidator(DoubleValidator())
         self.editingFinished.connect(self.valueChanged)
+
+    def setText(self, text: str) -> None:
+        self.setValue(float(text))
 
     def setValue(self, value: float) -> None:
         text = str(value)
         state, text, _ = self.validator().validate(text, 0)
         if state != QValidator.State.Acceptable:
-            raise ValueError("Value must be a positive real number.")
+            raise ValueError("Value is invalid.")
         if text != self.text():
-            self.setText(text)
+            super().setText(text)
             self.editingFinished.emit()
 
     def value(self) -> float:
