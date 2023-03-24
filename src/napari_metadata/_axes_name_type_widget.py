@@ -13,6 +13,7 @@ from napari_metadata._model import (
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._time_units import TimeUnits
 from napari_metadata._widget_utils import (
+    CompactLineEdit,
     readonly_lineedit,
     set_row_visible,
     update_num_rows,
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
 
 class AxisNameTypeRow:
     def __init__(self) -> None:
-        self.name: QLineEdit = QLineEdit()
+        self.name: QLineEdit = CompactLineEdit()
         self.type: QComboBox = QComboBox()
         self.type.addItems(AxisType.names())
 

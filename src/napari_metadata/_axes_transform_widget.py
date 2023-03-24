@@ -1,15 +1,9 @@
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from qtpy.QtWidgets import (
-    QAbstractSpinBox,
-    QDoubleSpinBox,
-    QGridLayout,
-    QLabel,
-    QLineEdit,
-    QWidget,
-)
+from qtpy.QtWidgets import QGridLayout, QLabel, QLineEdit, QWidget
 
 from napari_metadata._widget_utils import (
+    DoubleLineEdit,
     readonly_lineedit,
     set_row_visible,
     update_num_rows,
@@ -20,21 +14,13 @@ if TYPE_CHECKING:
     from napari.layers import Layer
 
 
-def make_double_spinbox(value: float, *, lower: float) -> QDoubleSpinBox:
-    spinbox = QDoubleSpinBox()
-    spinbox.setDecimals(6)
-    spinbox.setMinimum(lower)
-    spinbox.setValue(value)
-    spinbox.setSingleStep(0.1)
-    spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-    return spinbox
-
-
 class AxisTransformRow:
     def __init__(self) -> None:
         self.name = readonly_lineedit()
-        self.spacing = make_double_spinbox(1, lower=1e-6)
-        self.translate = make_double_spinbox(0, lower=-1e6)
+        self.spacing = DoubleLineEdit()
+        self.spacing.setValue(1)
+        self.translate = DoubleLineEdit()
+        self.translate.setValue(0)
 
     def widgets(self) -> Tuple[QWidget, ...]:
         return (self.name, self.spacing, self.translate)
