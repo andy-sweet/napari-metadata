@@ -1,6 +1,6 @@
 from typing import Callable, List, Optional, Protocol, Tuple
 
-from qtpy.QtCore import QObject, Signal
+from qtpy.QtCore import QObject, QSize, Signal
 from qtpy.QtGui import QDoubleValidator, QValidator
 from qtpy.QtWidgets import QGridLayout, QLineEdit, QWidget
 
@@ -41,7 +41,19 @@ class PositiveDoubleValidator(QDoubleValidator):
         return state, text, pos
 
 
-class DoubleLineEdit(QLineEdit):
+class MinimalLineEdit(QLineEdit):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.editingFinished.connect(self._moveCursorToStart)
+
+    def _moveCursorToStart(self) -> None:
+        self.setCursorPosition(0)
+
+    def sizeHint(self) -> QSize:
+        return self.minimumSizeHint()
+
+
+class DoubleLineEdit(MinimalLineEdit):
     valueChanged = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -65,13 +77,23 @@ class DoubleLineEdit(QLineEdit):
         return float(self.text())
 
 
-def readonly_lineedit(text: Optional[str] = None) -> QLineEdit:
-    widget = QLineEdit()
-    if text is not None:
-        widget.setText(text)
-    widget.setReadOnly(True)
-    widget.setStyleSheet("QLineEdit{" "background: transparent;" "}")
-    return widget
+class ReadOnlyLineEdit(MinimalLineEdit):
+    def __init__(
+        self, *, parent: Optional[QWidget] = None, text: Optional[str] = None
+    ) -> None:
+        super().__init__(parent)
+        if text is not None:
+            self.setText(text)
+        self.setReadOnly(True)
+        self.setStyleSheet("QLineEdit{" "background: transparent;" "}")
+
+    def setText(self, text: str) -> None:
+        super().setText(text)
+        self._moveCursorToStart()
+
+
+def readonly_lineedit(text: Optional[str] = None) -> ReadOnlyLineEdit:
+    return ReadOnlyLineEdit(text=text)
 
 
 class GridRow(Protocol):

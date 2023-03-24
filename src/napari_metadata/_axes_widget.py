@@ -14,6 +14,7 @@ from napari_metadata._space_units import SpaceUnits
 from napari_metadata._time_units import TimeUnits
 from napari_metadata._widget_utils import (
     DoubleLineEdit,
+    MinimalLineEdit,
     PositiveDoubleValidator,
     readonly_lineedit,
     set_row_visible,
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 
 class AxisRow:
     def __init__(self) -> None:
-        self.name: QLineEdit = QLineEdit()
+        self.name: QLineEdit = MinimalLineEdit()
         self.type: QComboBox = QComboBox()
         self.type.addItems(AxisType.names())
         self.scale = DoubleLineEdit()
