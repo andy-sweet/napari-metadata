@@ -63,12 +63,21 @@ class DoubleLineEdit(CompactLineEdit):
         return float(self.text())
 
 
+class ReadOnlyLineEdit(CompactLineEdit):
+    def __init__(self, *, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setReadOnly(True)
+        self.setStyleSheet("QLineEdit{" "background: transparent;" "}")
+
+    def setText(self, text: str) -> None:
+        super().setText(text)
+        self._moveCursorToStart()
+
+
 def readonly_lineedit(text: Optional[str] = None) -> QLineEdit:
-    widget = CompactLineEdit()
+    widget = ReadOnlyLineEdit()
     if text is not None:
         widget.setText(text)
-    widget.setReadOnly(True)
-    widget.setStyleSheet("QLineEdit{" "background: transparent;" "}")
     return widget
 
 
