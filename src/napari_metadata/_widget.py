@@ -14,14 +14,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari_metadata._axes_name_type_widget import (
-    AxesNameTypeWidget,
-    ReadOnlyAxesNameTypeWidget,
-)
-from napari_metadata._axes_transform_widget import (
-    AxesTransformWidget,
-    ReadOnlyAxesTransformWidget,
-)
+from napari_metadata._axes_widget import AxesWidget, ReadOnlyAxesWidget
 from napari_metadata._model import (
     coerce_extra_metadata,
     is_metadata_equal_to_original,
@@ -29,6 +22,10 @@ from napari_metadata._model import (
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._spatial_units_combo_box import SpatialUnitsComboBox
 from napari_metadata._time_units import TimeUnits
+from napari_metadata._transform_widget import (
+    ReadOnlyTransformWidget,
+    TransformWidget,
+)
 from napari_metadata._widget_utils import readonly_lineedit
 
 if TYPE_CHECKING:
@@ -55,10 +52,10 @@ class EditableMetadataWidget(QWidget):
         self._add_attribute_row("Layer name", self.name)
         self.name.textChanged.connect(self._on_name_changed)
 
-        self._axes_widget = AxesNameTypeWidget(viewer)
+        self._axes_widget = AxesWidget(viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
-        self._spacing_widget = AxesTransformWidget(viewer)
+        self._spacing_widget = TransformWidget(viewer)
         self._add_attribute_row("Transforms", self._spacing_widget)
 
         self._spatial_units = SpatialUnitsComboBox(viewer)
@@ -232,10 +229,10 @@ class ReadOnlyMetadataWidget(QWidget):
         self.data_shape = self._add_attribute_row("Array shape")
         self.data_type = self._add_attribute_row("Data type")
 
-        self._axes_widget = ReadOnlyAxesNameTypeWidget(viewer)
+        self._axes_widget = ReadOnlyAxesWidget(viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
-        self._spacing_widget = ReadOnlyAxesTransformWidget(viewer)
+        self._spacing_widget = ReadOnlyTransformWidget(viewer)
         self._add_attribute_row("Transforms", self._spacing_widget)
 
         self.spatial_units = self._add_attribute_row("Space units")

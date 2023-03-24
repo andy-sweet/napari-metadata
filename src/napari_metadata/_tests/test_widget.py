@@ -14,7 +14,7 @@ from napari.layers import (
 )
 
 from napari_metadata import MetadataWidget
-from napari_metadata._axes_name_type_widget import AxesNameTypeWidget
+from napari_metadata._axes_widget import AxesWidget
 from napari_metadata._axis_type import AxisType
 from napari_metadata._model import (
     EXTRA_METADATA_KEY,
@@ -433,7 +433,7 @@ def test_add_image_with_existing_metadata(qtbot: "QtBot"):
     assert widget._editable_widget._temporal_units.currentText() == "second"
 
 
-def axes_widget(widget: MetadataWidget) -> AxesNameTypeWidget:
+def axes_widget(widget: MetadataWidget) -> AxesWidget:
     return widget._editable_widget._axes_widget
 
 
