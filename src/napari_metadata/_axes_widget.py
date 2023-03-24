@@ -1,14 +1,6 @@
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from qtpy.QtWidgets import (
-    QAbstractSpinBox,
-    QComboBox,
-    QDoubleSpinBox,
-    QGridLayout,
-    QLabel,
-    QLineEdit,
-    QWidget,
-)
+from qtpy.QtWidgets import QComboBox, QGridLayout, QLabel, QLineEdit, QWidget
 
 from napari_metadata._axis_type import AxisType
 from napari_metadata._model import (
@@ -21,6 +13,8 @@ from napari_metadata._model import (
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._time_units import TimeUnits
 from napari_metadata._widget_utils import (
+    DoubleLineEdit,
+    PositiveDoubleValidator,
     readonly_lineedit,
     set_row_visible,
     update_num_rows,
@@ -31,23 +25,16 @@ if TYPE_CHECKING:
     from napari.layers import Layer
 
 
-def make_double_spinbox(value: float, *, lower: float) -> QDoubleSpinBox:
-    spinbox = QDoubleSpinBox()
-    spinbox.setDecimals(6)
-    spinbox.setMinimum(lower)
-    spinbox.setValue(value)
-    spinbox.setSingleStep(0.1)
-    spinbox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-    return spinbox
-
-
 class AxisRow:
     def __init__(self) -> None:
         self.name: QLineEdit = QLineEdit()
         self.type: QComboBox = QComboBox()
         self.type.addItems(AxisType.names())
-        self.scale = make_double_spinbox(1, lower=1e-6)
-        self.translate = make_double_spinbox(0, lower=-1e6)
+        self.scale = DoubleLineEdit()
+        self.scale.setValue(1)
+        self.scale.setValidator(PositiveDoubleValidator())
+        self.translate = DoubleLineEdit()
+        self.translate.setValue(0)
 
     def widgets(self) -> Tuple[QWidget, ...]:
         return (self.name, self.type, self.scale, self.translate)

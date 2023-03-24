@@ -1,6 +1,47 @@
 from typing import Callable, List, Optional, Protocol, Tuple
 
+from qtpy.QtCore import QObject, Signal
+from qtpy.QtGui import QDoubleValidator, QValidator
 from qtpy.QtWidgets import QGridLayout, QLineEdit, QWidget
+
+
+class PositiveDoubleValidator(QDoubleValidator):
+    MIN_VALUE: float = 1e-6
+
+    def __init__(self, parent: Optional[QObject] = None) -> None:
+        super().__init__(parent)
+        self.setBottom(self.MIN_VALUE)
+
+    def fixup(self, text: str) -> str:
+        try:
+            value = float(text)
+            if value < self.MIN_VALUE:
+                return str(self.MIN_VALUE)
+        except ValueError:
+            # Ignore cast errors and just return the input.
+            pass
+        return text
+
+
+class DoubleLineEdit(QLineEdit):
+    valueChanged = Signal()
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setValidator(QDoubleValidator())
+        self.editingFinished.connect(self.valueChanged)
+
+    def setValue(self, value: float) -> None:
+        text = str(value)
+        state, text, _ = self.validator().validate(text, 0)
+        if state != QValidator.State.Acceptable:
+            raise ValueError("Value must be a positive real number.")
+        if text != self.text():
+            self.setText(text)
+            self.editingFinished.emit()
+
+    def value(self) -> float:
+        return float(self.text())
 
 
 def readonly_lineedit(text: Optional[str] = None) -> QLineEdit:
