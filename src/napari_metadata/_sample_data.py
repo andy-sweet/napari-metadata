@@ -80,6 +80,7 @@ def _make_metadata(
         name=name,
         axes=tuple(deepcopy(axes)),
         scale=scale,
+        translate=(0,) * len(scale),
     )
     extras = ExtraMetadata(axes=axes, original=original)
     return {

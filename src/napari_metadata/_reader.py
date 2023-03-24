@@ -194,10 +194,16 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
                 scale = (
                     tuple(metadata["scale"]) if "scale" in metadata else None
                 )
+                translate = (
+                    tuple(metadata["translate"])
+                    if "translate" in metadata
+                    else None
+                )
                 original_meta = OriginalMetadata(
                     axes=deepcopy(axes),
                     name=metadata.get("name"),
-                    scale=tuple(scale),
+                    scale=scale,
+                    translate=translate,
                 )
                 extra_meta = ExtraMetadata(
                     axes=axes,
