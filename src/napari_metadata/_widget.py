@@ -49,7 +49,7 @@ class EditableMetadataWidget(QWidget):
         self.name.textChanged.connect(self._on_name_changed)
 
         self._axes_widget = AxesWidget(viewer)
-        self._add_attribute_row("Axes", self._axes_widget)
+        self._add_attribute_row("Dimensions", self._axes_widget)
 
         self._spatial_units = SpatialUnitsComboBox(viewer)
         self._add_attribute_row("Space units", self._spatial_units)
@@ -221,7 +221,7 @@ class ReadOnlyMetadataWidget(QWidget):
         self.data_type = self._add_attribute_row("Data type")
 
         self._axes_widget = ReadOnlyAxesWidget(viewer)
-        self._add_attribute_row("Axes", self._axes_widget)
+        self._add_attribute_row("Dimensions", self._axes_widget)
 
         self.spatial_units = self._add_attribute_row("Space units")
         self.temporal_units = self._add_attribute_row("Time units")
