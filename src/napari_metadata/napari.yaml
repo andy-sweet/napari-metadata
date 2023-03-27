@@ -4,7 +4,7 @@ contributions:
   commands:
     - id: napari-metadata.read_ome_zarr_hipsc_mip
       python_name: napari_metadata._sample_data:read_ome_zarr_hipsc_mip
-      title: Load 3D MIP OME-Zarr hiPSCs with labels
+      title: Load 3D MIP of hiPSCs
     - id: napari-metadata.make_cells_3d_sample_data
       python_name: napari_metadata._sample_data:make_cells_3d_sample_data
       title: Load 3D cells with metadata
@@ -22,7 +22,7 @@ contributions:
       title: Write image with metadata
   sample_data:
     - command: napari-metadata.read_ome_zarr_hipsc_mip
-      display_name: hiPSC 3D MIP
+      display_name: hiPSCs 3D MIP
       key: hipsc-3d-mip
     - command: napari-metadata.make_cells_3d_sample_data
       display_name: Cells 3D
