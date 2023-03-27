@@ -15,7 +15,6 @@ from napari_metadata._time_units import TimeUnits
 from napari_metadata._widget_utils import (
     CompactLineEdit,
     DoubleLineEdit,
-    PositiveDoubleValidator,
     readonly_lineedit,
     set_row_visible,
     update_num_rows,
@@ -33,7 +32,6 @@ class AxisRow:
         self.type.addItems(AxisType.names())
         self.scale = DoubleLineEdit()
         self.scale.setValue(1)
-        self.scale.setValidator(PositiveDoubleValidator())
         self.translate = DoubleLineEdit()
         self.translate.setValue(0)
 
