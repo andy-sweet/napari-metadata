@@ -22,26 +22,7 @@ class DoubleValidator(QDoubleValidator):
         return state, text, pos
 
 
-class PositiveDoubleValidator(QDoubleValidator):
-    def __init__(self, parent: Optional[QObject] = None) -> None:
-        super().__init__(parent)
-        self.last_valid: str = "1"
-
-    def fixup(self, text: str) -> str:
-        return self.last_valid
-
-    def validate(
-        self, text: str, pos: int
-    ) -> Tuple[QValidator.State, str, int]:
-        state, text, pos = super().validate(text, pos)
-        if state == QValidator.State.Acceptable and float(text) <= 0:
-            state = QValidator.State.Intermediate
-        if state == QValidator.State.Acceptable:
-            self.last_valid = text
-        return state, text, pos
-
-
-class MinimalLineEdit(QLineEdit):
+class CompactLineEdit(QLineEdit):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.editingFinished.connect(self._moveCursorToStart)
@@ -53,13 +34,18 @@ class MinimalLineEdit(QLineEdit):
         return self.minimumSizeHint()
 
 
-class DoubleLineEdit(MinimalLineEdit):
+class DoubleLineEdit(CompactLineEdit):
     valueChanged = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setValidator(DoubleValidator())
         self.editingFinished.connect(self.valueChanged)
+
+    def minimumSizeHint(self) -> QSize:
+        width_hint = self.fontMetrics().horizontalAdvance("1.234567")
+        sizeHint = super().minimumSizeHint()
+        return QSize(width_hint, sizeHint.height())
 
     def setText(self, text: str) -> None:
         self.setValue(float(text))
@@ -77,13 +63,9 @@ class DoubleLineEdit(MinimalLineEdit):
         return float(self.text())
 
 
-class ReadOnlyLineEdit(MinimalLineEdit):
-    def __init__(
-        self, *, parent: Optional[QWidget] = None, text: Optional[str] = None
-    ) -> None:
+class ReadOnlyLineEdit(CompactLineEdit):
+    def __init__(self, *, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        if text is not None:
-            self.setText(text)
         self.setReadOnly(True)
         self.setStyleSheet("QLineEdit{" "background: transparent;" "}")
 
@@ -92,8 +74,11 @@ class ReadOnlyLineEdit(MinimalLineEdit):
         self._moveCursorToStart()
 
 
-def readonly_lineedit(text: Optional[str] = None) -> ReadOnlyLineEdit:
-    return ReadOnlyLineEdit(text=text)
+def readonly_lineedit(text: Optional[str] = None) -> QLineEdit:
+    widget = ReadOnlyLineEdit()
+    if text is not None:
+        widget.setText(text)
+    return widget
 
 
 class GridRow(Protocol):

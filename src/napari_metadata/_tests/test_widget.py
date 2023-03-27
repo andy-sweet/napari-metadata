@@ -359,9 +359,11 @@ def test_restore_defaults(qtbot: "QtBot"):
         ),
         name="kermit",
         scale=(2, 3),
+        translate=(-1, 0.5),
     )
     assert layer.name != extras.original.name
     assert tuple(layer.scale) != extras.original.scale
+    assert tuple(layer.translate) != extras.original.translate
     assert tuple(extras.axes) != extras.original.axes
     assert widget._editable_widget._spatial_units.currentText() != "centimeter"
     assert (
@@ -373,6 +375,7 @@ def test_restore_defaults(qtbot: "QtBot"):
 
     assert layer.name == extras.original.name
     assert tuple(layer.scale) == extras.original.scale
+    assert tuple(layer.translate) == extras.original.translate
     assert tuple(extras.axes) == extras.original.axes
     assert widget._editable_widget._spatial_units.currentText() == "centimeter"
     assert (

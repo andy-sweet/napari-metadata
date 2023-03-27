@@ -118,6 +118,9 @@ class EditableMetadataWidget(QWidget):
             self._selected_layer.events.scale.disconnect(
                 self._update_restore_enabled
             )
+            self._selected_layer.events.translate.disconnect(
+                self._update_restore_enabled
+            )
 
         if layer is not None:
             self._spatial_units.set_selected_layer(layer)
@@ -125,6 +128,7 @@ class EditableMetadataWidget(QWidget):
             self.name.setText(layer.name)
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.scale.connect(self._update_restore_enabled)
+            layer.events.translate.connect(self._update_restore_enabled)
             extras = coerce_extra_metadata(self._viewer, layer)
             time_unit = str(extras.get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
@@ -176,6 +180,8 @@ class EditableMetadataWidget(QWidget):
                 layer.name = name
             if scale := original.scale:
                 layer.scale = scale
+            if translate := original.translate:
+                layer.translate = translate
             self._spatial_units.set_selected_layer(layer)
             self._axes_widget.set_selected_layer(layer)
             time_unit = str(extras.get_time_unit())
