@@ -20,6 +20,14 @@ if TYPE_CHECKING:
 
 
 def read_ome_zarr_hipsc_mip() -> List["LayerData"]:
+    """Downloads and reads a multi-channel 3D MIP of hiPSCs from Zenodo [1]_.
+
+    Notes
+    -----
+    .. [1] Lüthi, Joel. (2023). OME-Zarr 3D hiPSCs with 3D labels & 3D
+       measurements, 2x2 field of views (1.1.0) [Data set]. Zenodo.
+       https://doi.org/10.5281/zenodo.7674571
+    """
     unzip_dir = pooch.retrieve(
         url="https://zenodo.org/record/7674571/files/"
         "20200812-CardiomyocyteDifferentiation14-Cycle1_mip.zarr.zip?"
