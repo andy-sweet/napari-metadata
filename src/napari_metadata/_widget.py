@@ -24,6 +24,11 @@ from napari_metadata._spatial_units_combo_box import SpatialUnitsComboBox
 from napari_metadata._time_units import TimeUnits
 from napari_metadata._file_size import generate_display_size
 
+import logging
+
+
+logger = logging.getLogger()
+
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -77,9 +82,8 @@ class QMetadataWidget(QWidget):
             self._update_all_layers_extra_metadata
         )
 
-        self._file_size = QLineEdit()
-        self._add_attribute_row("File size", self._file_size)
-        self._file_size.textChanged.connect(self._on_name_changed)
+        self._file_size_label = QLabel()
+        self._add_attribute_row("File size label", self._file_size_label)
 
         layout.addStretch(1)
 
@@ -152,7 +156,14 @@ class QMetadataWidget(QWidget):
         return widget
 
     def _on_selected_layers_changed(self) -> None:
+        # TODO this is triggered aa varying number of times with each selection change.
+        logger.debug('_on_selected_layers_changed')
+        
         layer = self._get_selected_layer()
+
+        # TODO handle all class types
+        if type(layer).__name__ == 'Shapes':
+            return
 
         if layer == self._selected_layer:
             # TODO: check if this can actually occur.
@@ -176,7 +187,7 @@ class QMetadataWidget(QWidget):
             self._plugin.setText(self._get_plugin_info(layer))
             self._data_shape.setText(str(layer.data.shape))
             self._data_type.setText(str(layer.data.dtype))
-            self._file_size.setText(generate_display_size(layer.source.path))
+            self._file_size_label.setText(generate_display_size(layer))
 
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.data.connect(self._on_selected_layer_data_changed)
