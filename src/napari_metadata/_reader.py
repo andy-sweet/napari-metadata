@@ -219,7 +219,7 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
                         name = [name] * n_channels
                     for n, m in zip(name, metadata["metadata"]):
                         m[EXTRA_METADATA_KEY] = make_extras(
-                            metadata=m,
+                            metadata=metadata,
                             axes=axes,
                             name=n,
                         )
