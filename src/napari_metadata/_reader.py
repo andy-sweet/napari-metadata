@@ -35,7 +35,14 @@ LOGGER = logging.getLogger("napari_metadata._reader")
 
 # NB: color for labels, colormap for images
 # MOD: remove name from these, since it's a bit special.
-METADATA_KEYS = ("visible", "contrast_limits", "colormap", "color", "metadata")
+METADATA_KEYS = (
+    "name",
+    "visible",
+    "contrast_limits",
+    "colormap",
+    "color",
+    "metadata",
+)
 
 
 def napari_get_reader(path: PathLike) -> Optional[ReaderFunction]:
@@ -138,14 +145,13 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
                 transform_scale(node.metadata, metadata, channel_axis)
 
                 # MOD: squeeze a single level image.
-                if len(data) == 1:
+                if isinstance(data, list) and len(data) == 1:
                     data = data[0]
 
-                # MOD: there is one name for all datasets and axes.
+                # MOD: ensure that name is a list to handle single channel.
                 if name := node.metadata.get("name"):
-                    metadata["name"] = (
-                        name if isinstance(name, str) else name[0]
-                    )
+                    if channel_axis is None and isinstance(name, str):
+                        node.metadata["name"] = [name]
 
                 if node.load(Label):
                     layer_type = "labels"
@@ -189,29 +195,34 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
                                     pass
 
                 # MOD: this plugin provides somewhere to put the axes
-                # and some extra metadata.
+                # and some extra metadata. We create an instance of extra
+                # metadata per channel.
                 axes = get_axes(node.metadata)
-                scale = (
-                    tuple(metadata["scale"]) if "scale" in metadata else None
-                )
-                translate = (
-                    tuple(metadata["translate"])
-                    if "translate" in metadata
-                    else None
-                )
-                original_meta = OriginalMetadata(
-                    axes=deepcopy(axes),
-                    name=metadata.get("name"),
-                    scale=scale,
-                    translate=translate,
-                )
-                extra_meta = ExtraMetadata(
-                    axes=axes,
-                    original=original_meta,
-                )
-                if "metadata" not in metadata:
-                    metadata["metadata"] = dict()
-                metadata["metadata"][EXTRA_METADATA_KEY] = extra_meta
+                if channel_axis is None:
+                    if "metadata" not in metadata:
+                        metadata["metadata"] = dict()
+                    name = metadata.get("name")
+                    metadata["metadata"][EXTRA_METADATA_KEY] = make_extras(
+                        metadata=metadata,
+                        axes=axes,
+                        name=name,
+                    )
+                else:
+                    n_channels = (
+                        data[0] if isinstance(data, list) else data
+                    ).shape[channel_axis]
+                    meta = metadata.get("metadata", dict())
+                    if not isinstance(meta, list):
+                        metadata["metadata"] = [deepcopy(meta)] * n_channels
+                    name = metadata.get("name")
+                    if not isinstance(name, list):
+                        name = [name] * n_channels
+                    for n, m in zip(name, metadata["metadata"]):
+                        m[EXTRA_METADATA_KEY] = make_extras(
+                            metadata=m,
+                            axes=axes,
+                            name=n,
+                        )
 
                 rv: LayerData = (data, metadata, layer_type)
                 LOGGER.debug(f"Transformed: {rv}")
@@ -220,6 +231,25 @@ def transform(nodes: Iterator[Node]) -> Optional[ReaderFunction]:
         return results
 
     return f
+
+
+def make_extras(
+    *, metadata: dict, axes: List[Axis], name: Optional[str]
+) -> ExtraMetadata:
+    scale = tuple(metadata["scale"]) if "scale" in metadata else None
+    translate = (
+        tuple(metadata["translate"]) if "translate" in metadata else None
+    )
+    original_meta = OriginalMetadata(
+        axes=deepcopy(axes),
+        name=name,
+        scale=scale,
+        translate=translate,
+    )
+    return ExtraMetadata(
+        axes=deepcopy(axes),
+        original=original_meta,
+    )
 
 
 def get_axes(metadata: Dict) -> List[Axis]:
