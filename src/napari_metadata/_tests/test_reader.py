@@ -208,7 +208,12 @@ def test_read_multichannel_2d_image_with_extras(rng, path):
     assert read_metadata["translate"] == (-1, 1)
     assert read_metadata["channel_axis"] == 0
 
-    read_extras: ExtraMetadata = read_metadata["metadata"][EXTRA_METADATA_KEY]
+    # One metadata dict for each output layer.
+    assert len(read_metadata["metadata"]) == 2
+    # Check details of the first one.
+    read_extras = read_metadata["metadata"][0][EXTRA_METADATA_KEY]
     assert len(read_extras.axes) == 2
     assert read_extras.axes[0] == extras.axes[1]
     assert read_extras.axes[1] == extras.axes[2]
+    # Check the other is the same.
+    assert read_extras == read_metadata["metadata"][1][EXTRA_METADATA_KEY]

@@ -1,7 +1,9 @@
+import os
 from copy import deepcopy
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
 import numpy as np
+import pooch
 from skimage.data import cells3d
 
 from napari_metadata._model import (
@@ -11,9 +13,32 @@ from napari_metadata._model import (
     SpaceAxis,
     SpaceUnits,
 )
+from napari_metadata._reader import napari_get_reader
 
 if TYPE_CHECKING:
     from npe2.types import LayerData
+
+
+def read_ome_zarr_hipsc_mip() -> List["LayerData"]:
+    """Downloads and reads a multi-channel 3D MIP of hiPSCs from Zenodo [1]_.
+
+    Notes
+    -----
+    .. [1] Lüthi, Joel. (2023). OME-Zarr 3D hiPSCs with 3D labels & 3D
+       measurements, 2x2 field of views (1.1.0) [Data set]. Zenodo.
+       https://doi.org/10.5281/zenodo.7674571
+    """
+    unzip_dir = pooch.retrieve(
+        url="https://zenodo.org/record/7674571/files/"
+        "20200812-CardiomyocyteDifferentiation14-Cycle1_mip.zarr.zip?"
+        "download=1",
+        known_hash="md5:93722285708d58a36a0a3ee413b2c8a1",
+        processor=pooch.Unzip(),
+        progressbar=True,
+    )
+    zarr_dir = os.path.split(unzip_dir[0])[0]
+    reader = napari_get_reader(zarr_dir)
+    return reader(zarr_dir)
 
 
 def make_nuclei_md_sample_data() -> List["LayerData"]:
