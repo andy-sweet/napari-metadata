@@ -22,10 +22,6 @@ from napari_metadata._model import (
 from napari_metadata._space_units import SpaceUnits
 from napari_metadata._spatial_units_combo_box import SpatialUnitsComboBox
 from napari_metadata._time_units import TimeUnits
-from napari_metadata._transform_widget import (
-    ReadOnlyTransformWidget,
-    TransformWidget,
-)
 from napari_metadata._widget_utils import readonly_lineedit
 
 if TYPE_CHECKING:
@@ -54,9 +50,6 @@ class EditableMetadataWidget(QWidget):
 
         self._axes_widget = AxesWidget(viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
-
-        self._spacing_widget = TransformWidget(viewer)
-        self._add_attribute_row("Transforms", self._spacing_widget)
 
         self._spatial_units = SpatialUnitsComboBox(viewer)
         self._add_attribute_row("Space units", self._spatial_units)
@@ -139,8 +132,6 @@ class EditableMetadataWidget(QWidget):
             extras = coerce_extra_metadata(self._viewer, layer)
             time_unit = str(extras.get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
-
-        self._spacing_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
         self._update_restore_enabled()
@@ -232,9 +223,6 @@ class ReadOnlyMetadataWidget(QWidget):
         self._axes_widget = ReadOnlyAxesWidget(viewer)
         self._add_attribute_row("Dimensions", self._axes_widget)
 
-        self._spacing_widget = ReadOnlyTransformWidget(viewer)
-        self._add_attribute_row("Transforms", self._spacing_widget)
-
         self.spatial_units = self._add_attribute_row("Space units")
         self.temporal_units = self._add_attribute_row("Time units")
 
@@ -284,8 +272,6 @@ class ReadOnlyMetadataWidget(QWidget):
             layer.events.data.connect(self._on_selected_layer_data_changed)
 
             self._axes_widget.set_selected_layer(layer)
-
-        self._spacing_widget.set_selected_layer(layer)
 
         self._selected_layer = layer
 
