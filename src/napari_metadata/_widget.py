@@ -403,8 +403,9 @@ class MetadataWidget(QStackedWidget):
         self._selected_layer = layer
 
     def _remove_dock_widget(self) -> None:
-        # TODO: make this less fragile, but also don't require a full
-        # viewer for tests.
+        # To constrain our implementation and for testing, we only want
+        # the type of _viewer to be ViewerModel and not Viewer.
+        # This works around that typing information.
         if window := getattr(self._viewer, "window", None):
             window.remove_dock_widget(self)
 

@@ -1,25 +1,8 @@
 from typing import Callable, List, Optional, Protocol, Tuple
 
-from qtpy.QtCore import QObject, QSize, Signal
+from qtpy.QtCore import QSize, Signal
 from qtpy.QtGui import QDoubleValidator, QValidator
 from qtpy.QtWidgets import QGridLayout, QLineEdit, QWidget
-
-
-class DoubleValidator(QDoubleValidator):
-    def __init__(self, parent: Optional[QObject] = None) -> None:
-        super().__init__(parent)
-        self.last_valid: str = "0"
-
-    def fixup(self, text: str) -> str:
-        return self.last_valid
-
-    def validate(
-        self, text: str, pos: int
-    ) -> Tuple[QValidator.State, str, int]:
-        state, text, pos = super().validate(text, pos)
-        if state == QValidator.State.Acceptable:
-            self.last_valid = text
-        return state, text, pos
 
 
 class CompactLineEdit(QLineEdit):
@@ -39,7 +22,7 @@ class DoubleLineEdit(CompactLineEdit):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        self.setValidator(DoubleValidator())
+        self.setValidator(QDoubleValidator())
         self.editingFinished.connect(self.valueChanged)
 
     def minimumSizeHint(self) -> QSize:
