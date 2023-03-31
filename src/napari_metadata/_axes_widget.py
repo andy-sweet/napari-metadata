@@ -78,8 +78,8 @@ class AxesWidget(QWidget):
 
         names = self._get_layer_axis_names(layer)
         # TODO: given the current design we always need the event to be
-        # emitted, to be sure that the widgets get some values, but this
-        # a giant code smell.
+        # emitted, to be sure that all the widgets get some values, but
+        # this a giant code smell and should be changed.
         if dims.axis_labels == names:
             dims.events.axis_labels()
         else:
