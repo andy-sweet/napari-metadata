@@ -37,7 +37,7 @@ class TransformWidget(QWidget):
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
-        layout.addWidget(QLabel("Name"), 0, 0)
+        layout.addWidget(QLabel("Axis"), 0, 0)
         layout.addWidget(QLabel("Scale"), 0, 1)
         layout.addWidget(QLabel("Translate"), 0, 2)
 
@@ -145,7 +145,7 @@ class ReadOnlyTransformWidget(QWidget):
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
-        layout.addWidget(QLabel("Name"), 0, 0)
+        layout.addWidget(QLabel("Axis"), 0, 0)
         layout.addWidget(QLabel("Scale"), 0, 1)
         layout.addWidget(QLabel("Translate"), 0, 2)
 

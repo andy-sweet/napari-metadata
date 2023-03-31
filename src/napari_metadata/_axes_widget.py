@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, List, Tuple
 
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QGridLayout, QLabel, QLineEdit, QWidget
 
 from napari_metadata._axis_type import AxisType
@@ -28,6 +29,7 @@ class AxisRow:
     def __init__(self) -> None:
         self.name: QLineEdit = CompactLineEdit()
         self.type: QComboBox = QComboBox()
+        self.type.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.type.addItems(AxisType.names())
 
     def widgets(self) -> Tuple[QWidget, ...]:

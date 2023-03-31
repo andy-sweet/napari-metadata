@@ -1,6 +1,6 @@
 from typing import Callable, List, Optional, Protocol, Tuple
 
-from qtpy.QtCore import QSize, Signal
+from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QDoubleValidator, QValidator
 from qtpy.QtWidgets import QGridLayout, QLineEdit, QWidget
 
@@ -51,6 +51,7 @@ class ReadOnlyLineEdit(CompactLineEdit):
         super().__init__(parent)
         self.setReadOnly(True)
         self.setStyleSheet("QLineEdit{" "background: transparent;" "}")
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
     def setText(self, text: str) -> None:
         super().setText(text)
