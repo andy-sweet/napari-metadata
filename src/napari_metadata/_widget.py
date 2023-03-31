@@ -1,6 +1,7 @@
 from copy import deepcopy
 from typing import TYPE_CHECKING, Optional, Sequence
 
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QShowEvent
 from qtpy.QtWidgets import (
     QComboBox,
@@ -53,18 +54,20 @@ class EditableMetadataWidget(QWidget):
         self.name.textChanged.connect(self._on_name_changed)
 
         self._axes_widget = AxesWidget(viewer)
-        self._add_attribute_row("Dimensions", self._axes_widget)
+        self._add_attribute_row("Axes", self._axes_widget)
 
         self._spacing_widget = TransformWidget(viewer)
         self._add_attribute_row("Transforms", self._spacing_widget)
 
         self._spatial_units = SpatialUnitsComboBox(viewer)
+        self._spatial_units.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self._add_attribute_row("Space units", self._spatial_units)
         self._spatial_units.currentTextChanged.connect(
             self._on_spatial_units_changed
         )
 
         self._temporal_units = QComboBox()
+        self._temporal_units.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self._temporal_units.addItems(TimeUnits.names())
         self._add_attribute_row("Time units", self._temporal_units)
         self._temporal_units.currentTextChanged.connect(
@@ -230,7 +233,7 @@ class ReadOnlyMetadataWidget(QWidget):
         self.data_type = self._add_attribute_row("Data type")
 
         self._axes_widget = ReadOnlyAxesWidget(viewer)
-        self._add_attribute_row("Dimensions", self._axes_widget)
+        self._add_attribute_row("Axes", self._axes_widget)
 
         self._spacing_widget = ReadOnlyTransformWidget(viewer)
         self._add_attribute_row("Transforms", self._spacing_widget)
