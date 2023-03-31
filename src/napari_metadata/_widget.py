@@ -76,8 +76,8 @@ class EditableMetadataWidget(QWidget):
             self._on_temporal_units_changed
         )
 
-        self._file_size_label = QLabel()
-        self._add_attribute_row("File size label", self._file_size_label)
+        self._file_size = QLabel()
+        self._add_attribute_row("File size label", self._file_size)
         
         restore_layout = QHBoxLayout()
         restore_layout.addStretch(1)
@@ -147,6 +147,7 @@ class EditableMetadataWidget(QWidget):
             extras = coerce_extra_metadata(self._viewer, layer)
             time_unit = str(extras.get_time_unit())
             self._temporal_units.setCurrentText(time_unit)
+            self._file_size.setText(generate_display_size(layer))
 
         self._spacing_widget.set_selected_layer(layer)
 
@@ -163,16 +164,6 @@ class EditableMetadataWidget(QWidget):
 
     def _on_selected_layer_name_changed(self, event) -> None:
         self.name.setText(event.source.name)
-
-    def _on_selected_layers_changed(self) -> None:
-        # TODO this is triggered aa varying number of times with each selection change.
-        logger.debug('_on_selected_layers_changed')
-        
-        layer = self._get_selected_layer()
-
-        # TODO handle all class types
-        if type(layer).__name__ == 'Shapes':
-            return
 
     def _on_name_changed(self) -> None:
         if self._selected_layer is not None:
@@ -256,6 +247,9 @@ class ReadOnlyMetadataWidget(QWidget):
         self.spatial_units = self._add_attribute_row("Space units")
         self.temporal_units = self._add_attribute_row("Time units")
 
+        self._file_size = QLabel()
+        self._add_attribute_row("File size label", self._file_size)
+
         # Push control widget to bottom.
         layout.addStretch(1)
 
@@ -297,7 +291,7 @@ class ReadOnlyMetadataWidget(QWidget):
             extras = coerce_extra_metadata(self._viewer, layer)
             self.spatial_units.setText(str(extras.get_space_unit()))
             self.temporal_units.setText(str(extras.get_time_unit()))
-            self._file_size_label.setText(generate_display_size(layer))
+            self._file_size.setText(generate_display_size(layer))
 
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.data.connect(self._on_selected_layer_data_changed)

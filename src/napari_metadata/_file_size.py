@@ -76,7 +76,12 @@ def generate_display_size(layer):
         suffix = ''
     # data exists only in memory
     else:
-        size = layer.data.nbytes
+        if type(layer).__name__ == 'Shapes' or type(layer).__name__ == 'Surface':
+            size = 0 
+            for shape in layer.data:
+                size += shape.nbytes
+        else:
+            size = layer.data.nbytes
         suffix = ' (in memory)'
     text = generate_text_for_size(size, suffix=suffix)
 
