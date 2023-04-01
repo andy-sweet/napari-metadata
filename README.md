@@ -3,9 +3,11 @@
 [![tests](https://github.com/andy-sweet/napari-metadata/workflows/tests/badge.svg)](https://github.com/andy-sweet/napari-metadata/actions)
 [![codecov](https://codecov.io/gh/andy-sweet/napari-metadata/branch/main/graph/badge.svg)](https://codecov.io/gh/andy-sweet/napari-metadata)
 
-This is a [napari] plugin that expands the functionality of napari's handling of layer metadata.
+https://user-images.githubusercontent.com/2608297/229252866-68117b59-c574-44f5-9420-c59028007d37.mp4
 
-It uses napari's existing `Layer.metadata` dictionary to store some extra metadata attributes like layer specific axis names to provide a few contributions.
+This is a [napari] plugin that expands the functionality of napari's handling of layer metadata by using the `Layer.metadata` dictionary to store some extra metadata attributes.
+
+It provides a few contributions.
 
 - A reader to read some metadata from OME-Zarr images.
 - A writer to write some metadata to a multiscale OME-Zarr image.
