@@ -37,10 +37,6 @@ Since this is still experimental, I don't encourage contributions and likely won
 Distributed under the terms of the [BSD-3] license,
 "napari-metadata" is free and open source software
 
-## Issues
-
-If you encounter any problems, please [file an issue] along with a detailed description.
-
 [napari]: https://github.com/napari/napari
 [BSD-3]: http://opensource.org/licenses/BSD-3-Clause
 [file an issue]: https://github.com/andy-sweet/napari-metadata/issues
