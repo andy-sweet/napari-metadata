@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import math
 import logging
+import urllib 
 logger = logging.getLogger()
 
 
@@ -55,6 +56,24 @@ def generate_text_for_size(size, suffix=''):
     return f'{text}{suffix}'
 
 
+def is_url(url):
+    """Check to see if supplied string is a url string.
+    Parameters
+    ----------
+    url: str
+        String which may be a path or a url
+    
+    Returns
+    -------
+    bool: True if the string is a url
+    """
+
+    if urllib.parse.urlparse(url).scheme in ('http', 'https'):
+        return True
+    else:
+        return False
+
+
 def generate_display_size(layer):
     """High level generator for the displayed file size text on the widget. 
     If the provided layer has a source path, it will read the memory size on
@@ -70,14 +89,14 @@ def generate_display_size(layer):
     -------
     str: Formatted string for the file size or size in memory of the data. 
     """
-    # data exist in file on disk
-    if layer.source.path:
+    # data exists in file on disk
+    if layer.source.path and not is_url(layer.source.path):
         size = os.path.getsize(str(layer.source.path))
         suffix = ''
     # data exists only in memory
     else:
         if type(layer).__name__ == 'Shapes' or type(layer).__name__ == 'Surface':
-            size = 0 
+            size = 0
             for shape in layer.data:
                 size += shape.nbytes
         else:
