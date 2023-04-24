@@ -1,3 +1,7 @@
+"""The file size portion of the metadata widget is not part of the
+metadata stored with the image (e.g. name, scale). Instead, it is 
+a property which is populated on the fly at runtime. 
+"""
 from pathlib import Path
 import os
 import math
@@ -105,3 +109,14 @@ def generate_display_size(layer):
     text = generate_text_for_size(size, suffix=suffix)
 
     return text
+
+
+def zarr_directory_size(path: str):
+    """Recursively walk zarr directory and add up total size on disk in bytes.
+    Note that the napari-ome-zarr plugin doesn't store the path to a local
+    zarr file. Until this is resolved, this will be unused."""
+    p = Path(path)
+    if not p.is_dir():
+        raise RuntimeError('Path provided is not a directory. Unable to get zarr directory size.')
+    bytes = sum(file.stat().st_size for file in p.rglob("*"))
+    return bytes
