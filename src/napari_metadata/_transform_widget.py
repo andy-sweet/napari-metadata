@@ -26,7 +26,6 @@ class TransformRow:
         return (self.name, self.spacing, self.translate)
 
 
-# TODO: reduce redundancy between this class and the AxesNameTypeWidget.
 class TransformWidget(QWidget):
     """Shows and controls all axes' names and spacing."""
 
@@ -38,8 +37,7 @@ class TransformWidget(QWidget):
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # Header
-        layout.addWidget(QLabel("Name"), 0, 0)
+        layout.addWidget(QLabel("Axis"), 0, 0)
         layout.addWidget(QLabel("Scale"), 0, 1)
         layout.addWidget(QLabel("Translate"), 0, 2)
 
@@ -147,8 +145,7 @@ class ReadOnlyTransformWidget(QWidget):
         layout = QGridLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # Header
-        layout.addWidget(QLabel("Name"), 0, 0)
+        layout.addWidget(QLabel("Axis"), 0, 0)
         layout.addWidget(QLabel("Scale"), 0, 1)
         layout.addWidget(QLabel("Translate"), 0, 2)
 

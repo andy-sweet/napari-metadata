@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, List, Tuple
 
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QGridLayout, QLabel, QLineEdit, QWidget
 
 from napari_metadata._axis_type import AxisType
@@ -28,6 +29,7 @@ class AxisRow:
     def __init__(self) -> None:
         self.name: QLineEdit = CompactLineEdit()
         self.type: QComboBox = QComboBox()
+        self.type.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.type.addItems(AxisType.names())
 
     def widgets(self) -> Tuple[QWidget, ...]:
@@ -78,8 +80,8 @@ class AxesWidget(QWidget):
 
         names = self._get_layer_axis_names(layer)
         # TODO: given the current design we always need the event to be
-        # emitted, to be sure that the widgets get some values, but this
-        # a giant code smell.
+        # emitted, to be sure that all the widgets get some values, but
+        # this a giant code smell and should be changed.
         if dims.axis_labels == names:
             dims.events.axis_labels()
         else:
