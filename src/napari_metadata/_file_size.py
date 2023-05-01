@@ -7,47 +7,40 @@ import os
 import math
 import logging
 import urllib 
+from typing import Union
+
+
+from napari.layers import Layer
 logger = logging.getLogger()
 
 
-def magnitude(x):
-    """Get the order of magnitude of a number.
-    
-    Parameters
-    ----------
-    x: int | float
-        Number to determine magnitude. Must be >=0.
-    
-    Returns
-    -------
-    int: order of magnitude
-    """
-    if x == 0:
-        return int(0)
-    else:
-        return int(math.log10(x))
-
-
-def generate_text_for_size(size, suffix=''):
+def generate_text_for_size(size: Union[int, float], suffix: str = '') -> str:
     """Generate the text for the file size widget. Consumes size in bytes, 
     reduces the order of magnitude and appends the units. Optionally adds 
     an addition suffix to the end of the string.
 
+    >>> generate_text_for_size(13)
+    '13.00 bytes'    
     >>> generate_text_for_size(1303131, suffix=' (in memory)')
     '1.30 MB (in memory)'
-
 
     Parameters
     ---------
     size: (int | float)
         The size in bytes
-    suffix : (str, optional):
+    suffix: (str, optional)
         Addition text suffix to add to the display. Defaults to ''.
 
-    Returns:
-        str: formatted text string for the file size
+    Returns
+    -------
+    str
+        formatted text string for the file size
     """
-    order = magnitude(size)
+    if size == 0:
+        order = int(0)
+    else:
+        order = int(math.log10(size))
+    
     logger.debug(f'order: {order}')
     if order <= 2:
         text = f'{size:.2f} bytes'
@@ -60,25 +53,7 @@ def generate_text_for_size(size, suffix=''):
     return f'{text}{suffix}'
 
 
-def is_url(url):
-    """Check to see if supplied string is a url string.
-    Parameters
-    ----------
-    url: str
-        String which may be a path or a url
-    
-    Returns
-    -------
-    bool: True if the string is a url
-    """
-
-    if urllib.parse.urlparse(url).scheme in ('http', 'https'):
-        return True
-    else:
-        return False
-
-
-def generate_display_size(layer):
+def generate_display_size(layer: Layer) -> str:
     """High level generator for the displayed file size text on the widget. 
     If the provided layer has a source path, it will read the memory size on
     disk. If there is no source path on the layer, it will use the size of 
@@ -91,10 +66,12 @@ def generate_display_size(layer):
 
     Returns
     -------
-    str: Formatted string for the file size or size in memory of the data. 
+    str
+        Formatted string for the file size or size in memory of the data. 
     """
+    is_url = urllib.parse.urlparse(layer.source.path).scheme in ('http', 'https')
     # data exists in file on disk
-    if layer.source.path and not is_url(layer.source.path):
+    if layer.source.path and not is_url:
         size = os.path.getsize(str(layer.source.path))
         suffix = ''
     # data exists only in memory
@@ -111,12 +88,28 @@ def generate_display_size(layer):
     return text
 
 
-def zarr_directory_size(path: str):
-    """Recursively walk zarr directory and add up total size on disk in bytes.
+def directory_size(path: Union[str, Path]) -> str:
+    """Recursively walk a directory and add up total size on disk in bytes.
     Note that the napari-ome-zarr plugin doesn't store the path to a local
-    zarr file. Until this is resolved, this will be unused."""
+    zarr file. Until this is resolved, this will be unused.
+    
+    Parameters
+    ----------
+    path: str
+        Path to directory
+    
+    Returns
+    -------
+    str
+        Number of bytes in directory
+
+    Raises
+    ------
+    RuntimeError
+        If the path provided is not a directory
+    """
     p = Path(path)
     if not p.is_dir():
-        raise RuntimeError('Path provided is not a directory. Unable to get zarr directory size.')
+        raise RuntimeError('Path provided is not a directory. Unable to get directory size.')
     bytes = sum(file.stat().st_size for file in p.rglob("*"))
     return bytes
