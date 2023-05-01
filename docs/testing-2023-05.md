@@ -1,6 +1,6 @@
 # napari metadata plugin testing
 
-Author: Lucy Obus
+Author: Lucy Obus (@lcobus)
 
 Date: 2023, May
 
@@ -9,8 +9,8 @@ Date: 2023, May
 
 - CZI Imaging Tech was motivated to help improve the way napari handles layer metadata, with particular interest in essential metadata attributes like axis names and units that can be critical for accurate processing and visualization of biological data.
 - Andy Sweet decided to see how much improvement could be made by contributing a napari plugin that uses and augments the existing napari public API.
-- To support engineering effort, a targeted concept testing study of the prototype was run by Lucy Obus with support from Chi-li Chiu to evaluate plugin feature intuitiveness, overall user value, and learn from participants about the tradeoffs between application as a plugin vs contributing to core napari.
-- We spoke with (TODO: tag individuals who opted in), with the goal of hearing from a diversity of voices that include the OME, AICSIO, napari core developer, and iohub communities. We also did internal testing with CZI application scientists prior to external testing.
+- To support engineering effort, a targeted concept testing study of the prototype was run by @lcobus with support from @chili-chiu to evaluate plugin feature intuitiveness, overall user value, and learn from participants about the tradeoffs between application as a plugin vs contributing to core napari.
+- We spoke with several community members including @JoOkuma @ziw-liu @toloudis , with the goal of hearing from a diversity of voices that include the OME, AICSIO, napari core developer, and iohub communities. We also did internal testing with CZI application scientists prior to external testing.
 - During the session, we asked participants to describe their current data complexities and metadata needs, issues, and tools, before asking them to share their screen, use the plugin on their data, and provide feedback.
 - Participants validated prototype value, both as an individual to spot check and adjust info, and even moreso as a tool to use with collaborators to save time and effort. They also offered specific feedback on design/layout choices, which has been noted for future iterations.
 - The biggest area for continued discussion is whether metadata should stay as a plugin or contribute upstream.
