@@ -2,7 +2,7 @@
 
 Author: Lucy Obus
 
-Date: 2023/05/01
+Date: 2023, May
 
 
 ## Summary
@@ -41,7 +41,7 @@ Date: 2023/05/01
     * *“I avoid the metadata conversation- there are lots of good solutions, no perfect solutions. I’m more than happy to adjust my work to meet whatever community standard.”*
 
 
-## Learning Goal 1: plugin user experience & functionality
+## Learning goal 1: plugin user experience & functionality
 
 - Participants identified and were satisfied with key job stories implemented (axes/ruler/scale, editing capability).
 - Participants noted clean, responsive design that “looks like most napari dock widgets, and make sense spatially”.
@@ -59,7 +59,7 @@ Date: 2023/05/01
 - Add additional metadata to “view full metadata” section, akin to json file or collapsible AICSIO plugin
 
 
-## Learning Goal 2: validate current user value
+## Learning goal 2: validate current user value
 
 - We asked participants to rank the value of this plugin to their work today, as well as to sharing with collaborators, with 5 being “this would be invaluable today” and 1 being “this would provide no value whatsoever.”
     - **For individual value, participants averaged a ranking of 3.** While users of console or prestep metadata tools, participants identified strong value add of a widget metadata experience to rename axes to align across data sets, semantic labeling to understand how to process images, change scale to expected values, and view full metadata for context
@@ -70,7 +70,7 @@ Date: 2023/05/01
         - *“While I might make a lot of these changes in console, I would love to give this to a colleague and tell them to adjust the transform in GUI. This would be really useful for collaboration.”*
 
 
-### Learning Goal 3: explore long term functionality as plugin vs upstream contribution
+### Learning goal 3: explore long term functionality as plugin vs upstream contribution
 
 - non-napari core developers believed the functionality should live in core napari viewer, to make it easier to develop other plugins that would rely on this data, and to identify standards
     - *“I really want something upstream, now there is no way to tell standards. Napari is the de facto standard image viewer for python; if napari did it we would all be happy.”*
