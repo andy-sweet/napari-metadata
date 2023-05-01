@@ -1,6 +1,7 @@
 # napari metadata plugin testing
 
-Main author: Lucy Obus
+Author: Lucy Obus
+Date: 2023/05/01
 
 
 ## Summary
@@ -21,7 +22,7 @@ Main author: Lucy Obus
 3. Explore long term strategic tradeoffs of functionality as a plugin vs upstream contributions to support product decision on contribution effort.
 
 
-## Who We Tested With
+## Who we tested with
 
 - Initial internal testing: Application Science team revealed several interaction and clarification improvements.
 - External 6 participants focused on diversity of communities with vested interest in metadata standards from developer POV: OME, AICSIO, napari core developers, IOhub.
@@ -54,7 +55,7 @@ Main author: Lucy Obus
 - Indicator when data is empty because it doesn’t exist, or empty because data couldn’t be pulled
 - Rethink large empty space
 - Consider updating “view full metadata” to button
-- Add additional metadata to “view full metadata” section, akin to json file or collapsible AICSIO plugin \
+- Add additional metadata to “view full metadata” section, akin to json file or collapsible AICSIO plugin
 
 
 ## Learning Goal 2: validate current user value
