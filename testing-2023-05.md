@@ -1,6 +1,6 @@
 # napari metadata plugin testing
 
-Author: Lucy Obus (@lcobus)
+Author: [Lucy Obus](https://github.com/LCObus)
 
 Date: 2023, May
 
