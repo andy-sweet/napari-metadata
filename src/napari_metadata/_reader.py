@@ -75,6 +75,11 @@ METADATA_KEYS = (
 def napari_get_reader(path: PathLike) -> Optional[ReaderFunction]:
     """Returns a reader for supported paths that include IDR ID.
     - URL of the form: https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.1/ID.zarr/
+    The reader can be then be called using the path to read the file.
+    
+    >>> reader = napari_get_reader(path)
+    >>> layer_list = reader(path)
+
     """
     if isinstance(path, list):
         if len(path) > 1:

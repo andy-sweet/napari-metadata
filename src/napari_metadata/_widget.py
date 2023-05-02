@@ -28,6 +28,8 @@ from napari_metadata._transform_widget import (
     TransformWidget,
 )
 from napari_metadata._widget_utils import readonly_lineedit
+from napari_metadata._file_size import generate_display_size
+
 
 if TYPE_CHECKING:
     from napari.components import ViewerModel
@@ -73,7 +75,7 @@ class EditableMetadataWidget(QWidget):
         self._temporal_units.currentTextChanged.connect(
             self._on_temporal_units_changed
         )
-
+        
         restore_layout = QHBoxLayout()
         restore_layout.addStretch(1)
         self._restore_defaults = QPushButton("Restore defaults")
@@ -231,6 +233,7 @@ class ReadOnlyMetadataWidget(QWidget):
         self.plugin = self._add_attribute_row("Plugin")
         self.data_shape = self._add_attribute_row("Array shape")
         self.data_type = self._add_attribute_row("Data type")
+        self.file_size = self._add_attribute_row("File size")
 
         self._axes_widget = ReadOnlyAxesWidget(viewer)
         self._add_attribute_row("Axes", self._axes_widget)
@@ -282,6 +285,7 @@ class ReadOnlyMetadataWidget(QWidget):
             extras = coerce_extra_metadata(self._viewer, layer)
             self.spatial_units.setText(str(extras.get_space_unit()))
             self.temporal_units.setText(str(extras.get_time_unit()))
+            self.file_size.setText(generate_display_size(layer))
 
             layer.events.name.connect(self._on_selected_layer_name_changed)
             layer.events.data.connect(self._on_selected_layer_data_changed)

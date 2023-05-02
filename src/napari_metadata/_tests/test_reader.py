@@ -18,17 +18,17 @@ from .._reader import napari_get_reader
 from .._writer import write_image
 
 
-@pytest.fixture
-def rng() -> np.random.Generator:
-    return np.random.default_rng(0)
-
-
-@pytest.fixture
-def path(tmp_path) -> str:
-    return str(tmp_path / "test.zarr")
-
-
 def read_ome_zarr(path: str) -> List[LayerData]:
+    """Gets the napari reader and uses it to read the file at path. 
+
+    Returns
+    -------
+    LayerData tuple. List of layer tuples with the form: 
+        [(data, metadata, layer_type)] where data is np.array or dask.array, 
+        metadata is dict, and layer_type is str.
+        See https://napari.org/stable/plugins/guides.html#the-layerdata-tuple 
+        for full documentation.
+    """
     reader = napari_get_reader(path)
     return reader(path)
 
