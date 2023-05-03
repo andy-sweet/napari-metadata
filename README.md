@@ -40,3 +40,4 @@ Distributed under the terms of the [BSD-3] license,
 [napari]: https://github.com/napari/napari
 [BSD-3]: http://opensource.org/licenses/BSD-3-Clause
 [file an issue]: https://github.com/andy-sweet/napari-metadata/issues
+[pip]: https://pypi.org/project/pip
