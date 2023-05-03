@@ -20,6 +20,8 @@ This plugin lacks a public API by design. In particular, you should not rely on 
 
 You can of course feel free to use the plugin or any of its code, but by doing so accept ownership of any issues that arise. If you have ideas or comments about this work, feel free to [file an issue].
 
+Some [initial testing](https://github.com/andy-sweet/napari-metadata/blob/main/docs/testing-2023-05.md) was performed to assess the value of this plugin with findings that could be helpful for related and future work.
+
 ## Installation
 
 You can install the latest development version of `napari-metadata` via [pip]:
