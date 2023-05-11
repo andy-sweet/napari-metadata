@@ -7,17 +7,31 @@ on:
   push:
     branches:
       - main
-      - npe2
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
   pull_request:
     branches:
       - main
-      - npe2
   workflow_dispatch:
 
 jobs:
+  validate:
+    name: validate with npe2
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - name: Validate with npe2
+        run: npe2 validate napari-metadata
+
   test:
+    needs: [validate]
     name: ${{ matrix.platform }} py${{ matrix.python-version }}
     runs-on: ${{ matrix.platform }}
     strategy:
